@@ -102,7 +102,7 @@
             transition: background-color 300ms ease;
         }
         .foxy-message-content {
-            max-width: 800px; 
+            max-width: 900px; /* ***FIX: Increased width for wider paragraphs*** */ 
             margin: 0 auto; 
             padding: 0 1.5rem; 
         }
@@ -116,7 +116,7 @@
         /* User Message Container (Improved Gapping) */
         .user-message-container {
             align-self: flex-end;
-            max-width: 85%; 
+            max-width: 95%; /* ***FIX: Increased width for user messages*** */ 
             margin: 0.5rem 1.5rem 0.5rem 0; 
             word-wrap: break-word;
             animation: slideInRight 0.3s ease-in;
@@ -647,7 +647,7 @@
         };
         // --- END THEME MANAGEMENT ---
         
-        // --- NEW: ANDROID COMMAND HANDLING ---
+        // --- NEW: ANDROID COMMAND HANDLING (FIXED) ---
         /** Opens an Android App via Intent URI in a web browser, compatible with Android. */
         const handleAndroidAppCommand = (appName, command) => {
             let uri = '';
@@ -673,9 +673,17 @@
                 const query = command.replace(/open youtube to search/i, '').trim() || 'trending videos';
                 uri = `intent:q=${encodeURIComponent(query)}/#Intent;scheme=vnd.youtube;action=android.intent.action.SEARCH;end`;
             } else {
-                console.warn(`No specific URI mapping for app: ${appName}`);
-                alert(`Foxy simulated command execution for: ${appName} - ${command}`);
-                return;
+                // ***FIX: Robust Fallback for Android App Commands***
+                // If no specific app is mapped, try a Play Store search as a helpful action.
+                const searchName = command.replace(/open /i, '').replace(/app/i, '').trim() || appName;
+                if (searchName && searchName !== 'unknown') {
+                    uri = `market://search?q=${encodeURIComponent(searchName)}`;
+                    animateSubtitle(`Attempting Play Store search for: ${searchName}...`);
+                } else {
+                    console.warn(`No specific URI mapping for app: ${appName}`);
+                    alert(`Foxy simulated command execution for: ${appName} - ${command}. App command not supported.`);
+                    return;
+                }
             }
 
             console.log(`Attempting to execute URI: ${uri}`);
@@ -766,59 +774,63 @@
                     }
 
                     const data = await resp.json();
-                    return {
-                        text: data.text,
-                        isCommand: data.is_command, 
-                        generatedTitle: data.generated_title || null, 
-                        command: data.command || null, 
-                        app_name: data.app_name || null, 
-                        greeting: data.greeting || null 
-                    };
+                    return { text: data.text, isCommand: data.is_command, generatedTitle: data.generated_title || null, command: data.command || null, appName: data.app_name || null, greeting: data.greeting || null };
 
-                } catch (err) {
-                    console.error('API call failed:', err);
+                } catch (error) {
+                    console.error('AI Fetch Error:', error);
+                    const wait = baseDelay * Math.pow(2, attempt);
                     if (attempt < maxRetries) {
-                        const wait = baseDelay * Math.pow(2, attempt);
-                        await new Promise(r => setTimeout(r, wait + Math.random() * 200));
+                        await new Promise(r => setTimeout(r, wait + Math.random() * 300));
                         continue;
+                    } else {
+                        return { text: 'An unknown network error occurred. Please check your connection and try again.', isCommand: false };
                     }
-                    return { text: `Foxy is currently unable to reach the secure function. Error: ${err.message || err}. Please check the Netlify deployment.`, isCommand: false };
                 }
             }
-
-            return { text: 'Unexpected error calling backend.', isCommand: false };
         };
         
-        // --- Session Management & Persistence (Local Storage) Functions ---
+        // --- CHAT SESSION MANAGEMENT ---
 
         /** Loads all chat sessions from local storage. */
-        function loadAllSessions() {
+        function loadSessions() {
             try {
-                const sessionsJson = localStorage.getItem(STORAGE_KEY_CHATHISTORY);
-                if (sessionsJson) {
-                    const loadedSessions = JSON.parse(sessionsJson);
-                    // Ensure modes are set for separation
-                    return loadedSessions.map(s => ({ ...s, mode: s.mode || 'chat' })).filter(s => s.messages.length > 0);
+                const storedSessions = localStorage.getItem(STORAGE_KEY_CHATHISTORY);
+                if (storedSessions) {
+                    allSessions = JSON.parse(storedSessions);
                 }
             } catch (error) {
-                console.error("Error loading all sessions from local storage. Data may be corrupted. Resetting history.", error);
-                try { localStorage.removeItem(STORAGE_KEY_CHATHISTORY); } catch(e) { /* ignore */ }
-                return [];
+                console.error("Error loading sessions from local storage:", error);
+                allSessions = [];
             }
-            return [];
-        }
+            
+            // If no sessions, create a default one
+            if (allSessions.length === 0) {
+                startNewSession('chat');
+            } else {
+                // If sessions exist, try to restore the last active session, otherwise default to the newest one
+                const lastSessionId = localStorage.getItem('foxy_current_session_id');
+                const foundLast = allSessions.find(s => s.id === lastSessionId);
+                
+                if (foundLast) {
+                    currentSessionId = foundLast.id;
+                } else {
+                    currentSessionId = allSessions[0].id;
+                }
+            }
+        };
 
-        /** Saves the current array of sessions to local storage. */
+        /** Saves all chat sessions to local storage. */
         function saveAllSessions() {
             try {
                 localStorage.setItem(STORAGE_KEY_CHATHISTORY, JSON.stringify(allSessions));
+                // Also save the currently active session ID for persistence
+                 localStorage.setItem('foxy_current_session_id', currentSessionId);
             } catch (error) {
                 console.error("Error saving all sessions to local storage:", error);
             }
         }
 
         const getCurrentSession = () => allSessions.find(s => s.id === currentSessionId);
-
         const getCurrentMessages = () => {
             const session = getCurrentSession();
             return session ? session.messages : [];
@@ -827,9 +839,9 @@
         /** Starts a new chat session with a specified mode. */
         const startNewSession = (mode = 'chat') => {
             const newId = crypto.randomUUID();
-            const newSession = { 
-                id: newId, 
-                title: mode === 'jarvis' ? 'Jarvis Command' : 'New Chat', 
+            const newSession = {
+                id: newId,
+                title: mode === 'jarvis' ? 'Jarvis Command' : 'New Chat',
                 messages: [],
                 mode: mode,
                 timestamp: new Date().toISOString()
@@ -846,7 +858,6 @@
             if (index !== -1) {
                 allSessions.splice(index, 1);
             }
-
             if (sessionId === currentSessionId) {
                 if (allSessions.length > 0) {
                     // Try to switch to the newest session possible
@@ -861,7 +872,7 @@
             saveAllSessions();
             renderSessionHistory(); // Granular update for sidebar
         };
-
+        
         /** Deletes all chat sessions. */
         const deleteAllSessions = () => {
             allSessions = [];
@@ -871,32 +882,36 @@
 
         /** Updates the title of the current session if a generated title is available. */
         const updateSessionTitle = (sessionId, generatedTitle, mode) => {
+            if (!generatedTitle) return;
             const session = allSessions.find(s => s.id === sessionId);
-            if (session && generatedTitle) {
-                // Only update if the title is the default 'New Chat' or 'Jarvis Command'
-                if (session.title === "New Chat" || session.title === "Jarvis Command" || session.title.startsWith("Jarvis Command")) {
+            
+            if (session) {
+                const currentTitleLower = session.title.toLowerCase();
+                // FIX: Update title if it contains the default "new chat" or "jarvis command" title
+                if (currentTitleLower.includes('new chat') || currentTitleLower.includes('jarvis command')) {
                     session.title = generatedTitle;
                     saveAllSessions();
-                    renderSessionHistory(); // Update the sidebar
+                    renderSessionHistory();
+                    updateScreen(); // To update the main header title
                 }
             }
         };
 
         /** Adds a message to the current session's history. */
-        const addMessageToHistory = (sender, text, isCommand = false, embedHtml = null, isLoading = false, commandData = {}) => {
+        const addMessageToHistory = (sender, text, isCommand = false, commandData = null, isLoading = false) => {
             const currentSession = getCurrentSession();
-            if (!currentSession) return;
+            if (!currentSession) {
+                console.error("Cannot add message: No active session.");
+                return;
+            }
+            
+            // Ensure consistent message ID generation
+            const messageId = crypto.randomUUID(); 
 
-            // Remove previous loading message if it exists
-            currentSession.messages = currentSession.messages.filter(msg => !msg.isLoading);
-
-            const messageId = crypto.randomUUID(); // Give every message a unique ID
-            const message = { 
-                sender, 
-                text, 
-                isCommand, 
-                embedHtml, 
-                timestamp: new Date().toISOString(), 
+            const message = {
+                sender: sender,
+                text: text,
+                timestamp: new Date().toISOString(),
                 mode: currentSession.mode,
                 messageId: messageId,
                 isLoading: isLoading, // Mark as loading
@@ -929,10 +944,10 @@
                 // Use setTimeout to ensure DOM updates are complete
                 setTimeout(() => {
                     element.scrollTop = element.scrollHeight;
-                }, 100); 
+                }, 100);
             }
         };
-        
+
         /** Toggles the visibility of the history list in the sidebar. */
         const updateHistoryVisibility = () => {
             const container = document.getElementById('session-history-container');
@@ -941,7 +956,7 @@
 
             if (isHistoryOpen) {
                 // Set max-height large enough to contain content, for smooth transition
-                container.style.maxHeight = container.scrollHeight + 50 + "px"; 
+                container.style.maxHeight = container.scrollHeight + 50 + "px";
                 container.classList.remove('opacity-0');
                 icon.classList.remove('rotate-180');
             } else {
@@ -960,44 +975,33 @@
         /** Toggles the sidebar visibility (smooth transition). */
         const toggleSidebar = (forceState = null) => {
             isSidebarOpen = forceState !== null ? forceState : !isSidebarOpen;
-            
             const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content-area');
-            let backdrop = document.getElementById('sidebar-backdrop');
-            const appRoot = document.getElementById('app-root');
+            const root = document.getElementById('app-root');
 
             if (sidebar) {
-                // Use transform on all screens for the sidebar
                 sidebar.classList.toggle('translate-x-0', isSidebarOpen);
                 sidebar.classList.toggle('-translate-x-full', !isSidebarOpen);
             }
-
-            if (mainContent) {
-                // Use margin-left shift on desktop only
-                mainContent.classList.toggle('lg:ml-72', isSidebarOpen);
+            if (root) {
+                 root.classList.toggle('sidebar-shifted', isSidebarOpen && window.innerWidth >= 1024);
             }
 
-            // Manage backdrop dynamically without full screen update
-            if (isSidebarOpen) {
-                if (!backdrop) {
-                    // Re-render only the backdrop
-                    backdrop = document.createElement('div');
-                    backdrop.id = 'sidebar-backdrop';
-                    backdrop.className = 'fixed inset-0 bg-black/50 z-40 lg:hidden animate-fadeIn';
-                    backdrop.onclick = () => toggleSidebar(false);
-                    appRoot.appendChild(backdrop);
-                }
-            } else {
-                if (backdrop) {
-                    // Remove the backdrop
-                    backdrop.remove();
-                }
-            }
-
-            // No call to updateScreen() here, which prevents the UI refresh flicker.
+            // After toggle, re-evaluate history visibility to ensure smooth height calculation
+            updateHistoryVisibility(); 
         };
 
-        /** Function to manage the state of the input and send button. */
+        /** Updates the input field's active state (used for send button styling). */
+        const updateInputActiveState = () => {
+            const input = document.getElementById('chat-input');
+            const sendButton = document.getElementById('chat-send-button');
+            if (input && sendButton) {
+                isInputDirty = input.value.trim().length > 0;
+                sendButton.classList.toggle('send-button-active', isInputDirty && !isProcessing);
+                sendButton.disabled = !isInputDirty || isProcessing;
+            }
+        };
+
+        /** Sets the global processing state and updates related UI elements. */
         const setUIProcessingState = (isNowProcessing) => {
             isProcessing = isNowProcessing;
             isAnimatingResponse = isNowProcessing; // Block input while response is animating/streaming
@@ -1027,79 +1031,57 @@
             }
 
             // In jarvis mode, update orb
-            updateOrbVisuals(); 
+            updateOrbVisuals();
         };
 
-        /** Updates the visual state of the chat input/send button. */
-        const updateInputActiveState = () => {
-            const input = document.getElementById('chat-input');
-            const sendButton = document.getElementById('chat-send-button');
-            if (!input || !sendButton || isProcessing) return;
+        // --- MARKDOWN RENDERING UTILITY ---
 
-            isInputDirty = input.value.trim().length > 0;
-
-            if (isInputDirty) {
-                sendButton.classList.add('send-button-active');
-            } else {
-                sendButton.classList.remove('send-button-active');
-            }
-            sendButton.disabled = !isInputDirty;
-        };
-
-        /** Handles keyboard events on the chat input. */
-        const handleInputKey = (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Prevent new line
-                if (isInputDirty && !isProcessing) {
-                    sendMessage();
-                }
-            }
-            // Debounce or just update state immediately
-            updateInputActiveState(); 
-        };
-
-
-        // --- MARKDOWN AND RENDERING ---
-        
-        /** Simple Markdown to HTML conversion. */
-        const markdownToHtml = (markdown) => {
+        /** Converts a subset of markdown to HTML. */
+        const parseMarkdown = (markdown) => {
             let html = markdown || '';
 
-            // Handle the custom [userName] placeholder
-            html = html.replace(/\[userName\]/g, `<strong class="text-cyan-400">${userName || 'Guest'}</strong>`);
-            
-            // Headings
-            html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-3 mb-2 text-white">$1</h2>')
-                       .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-2 mb-2 text-gray-200">$1</h3>')
-            
-            // Styling
-            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-                       .replace(/__(.*?)__/g, '<u>$1</u>') // Underline/Bold (kept bold for consistency in general markdown)
-                       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-                       .replace(/`(.*?)`/g, '<code class="bg-gray-700/50 p-1 rounded text-pink-300">$1</code>') // Inline Code
+            // Handle [userName] placeholder
+            html = html.replace(/\[userName\]/g, userName || 'Guest');
 
-            // Lists (Simple markdown support for * or -)
-            html = html.replace(/(\r\n|\r|\n)(?:\*|-)\s+(.*)/g, (match, nl, item) => `${nl}<li>${item}</li>`);
+            // Escape HTML characters first to protect against script injection in markdown
+            html = html.replace(/&/g, '&amp;')
+                       .replace(/</g, '&lt;')
+                       .replace(/>/g, '&gt;')
+                       .replace(/"/g, '&quot;')
+                       .replace(/'/g, '&#039;');
             
-            // Simple approach: look for block of <li> items and wrap them (requires a bit more logic or reliance on innerHTML parsing later).
+            // Bold (**text** or __text__)
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                       .replace(/__(.*?)__/g, '<strong>$1</strong>');
+            
+            // Italics (*text* or _text_)
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
+                       .replace(/_(.*?)_/g, '<em>$1</em>');
+                       
+            // Headers (## Header) -> only H3 supported in this simplified parser
+            html = html.replace(/### (.*?)\n/g, '<h3>$1</h3>')
+                       .replace(/## (.*?)\n/g, '<h2>$1</h2>')
+                       .replace(/# (.*?)\n/g, '<h1>$1</h1>');
+            
+            // Lists (simple * or - lists) - requires a bit more logic or reliance on innerHTML parsing later).
             // For now, simple list item tags are OK.
-
+            
             // Code Blocks (```)
             html = html.replace(/```(.*?)\n([\s\S]*?)```/g, (match, language, code) => {
                 const lang = language.trim().toLowerCase() || 'text';
-                const codeHtml = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                const codeHtml = code.trim().replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'"); // Unescape for code blocks only
                 return `<pre class="text-sm overflow-x-auto"><code class="language-${lang}">${codeHtml}</code></pre>`;
             });
-
+            
             // Convert remaining double newlines to paragraphs/breaks
             html = `<p>${html.split(/(\r\n|\r|\n){2,}/g).filter(s => s.trim().length > 0).join('</p><p>')}</p>`;
             
             // Remove empty paragraph tags that might have been created
             html = html.replace(/<p><\/p>/g, '');
-            
+
             return html;
         };
-        
+
         /** Generates the HTML for a single message. */
         const renderMessage = (message) => {
             const container = document.createElement('div');
@@ -1114,62 +1096,55 @@
                             <div class="text-lg text-gray-400">Foxy is thinking...</div>
                         ` : `
                             <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0"/>
-                            <div class="foxy-response-target text-lg text-gray-200">
-                                ${message.embedHtml || markdownToHtml(message.text)}
-                            </div>
-                        `}
+                            <div class="foxy-response-target text-base text-gray-200 leading-relaxed max-w-full">${parseMarkdown(message.text)}</div> `}
                     </div>
                 `;
             } else {
+                // User message
                 container.innerHTML = `
-                    <div class="user-message-content">
-                        <p class="text-white text-lg">${message.text}</p>
-                    </div>
-                `;
+                    <div class="user-message-content text-base">${message.text}</div> `;
             }
+
             return container;
         };
 
-        /** Custom embedded HTML for System Command messages in Jarvis mode. (UPDATED to include execution button) */
-        const renderCommandEmbed = (appName, command) => {
-            return `
-                 <div class="flex flex-col space-y-3 p-4 rounded-xl bg-gray-700 border border-gray-600 shadow-md">
-                      <div class="flex items-start space-x-3">
-                        <svg class="w-6 h-6 text-red-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        <div>
-                           <p class="font-semibold text-white">System Command Issued</p>
-                           <p class="text-sm text-gray-300">App: <strong>${appName}</strong></p>
-                           <p class="text-sm text-gray-300">Action: <code>${command}</code></p>
-                        </div>
-                      </div>
-                      <button onclick="handleAndroidAppCommand('${appName}', '${command.replace(/'/g, "\\'")}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm">
-                          Execute Command (Android)
-                      </button>
-                 </div>
-            `;
-        };
 
-
-        /** Renders all messages for the current session. */
+        /** Appends all messages in the current session to the chat area. */
         const renderChatMessages = () => {
-            const messagesArea = document.getElementById('chat-messages-area');
-            if (!messagesArea) return;
-
-            // Clear existing messages
-            messagesArea.innerHTML = '';
+            const chatArea = document.getElementById('chat-messages-area');
+            if (!chatArea) return;
             
             const messages = getCurrentMessages();
-
+            chatArea.innerHTML = '';
+            
             messages.forEach(message => {
                 const messageElement = renderMessage(message);
-                messagesArea.appendChild(messageElement);
+                chatArea.appendChild(messageElement);
+                
+                // Animate non-loading Foxy messages immediately after appending
+                if (message.sender === 'foxy' && !message.isLoading) {
+                    const responseTarget = messageElement.querySelector('.foxy-response-target');
+                    if (responseTarget) {
+                        // Apply animation delay to children
+                        Array.from(responseTarget.children).forEach((child, index) => {
+                            child.style.animationDelay = `${index * 0.2}s`;
+                        });
+                    }
+                }
             });
-
-            // CRITICAL FIX: SCROLL TO BOTTOM AFTER INITIAL RENDER
-            setTimeout(() => scrollToBottom('chat-messages-area'), 0);
+            
+            scrollToBottom('chat-messages-area');
         };
 
-        /** Sends the user message to the AI proxy. (UPDATED) */
+        /** Handles the input change in chat mode. */
+        const handleInputKey = (event) => {
+            updateInputActiveState();
+            if (event.key === 'Enter' && isInputDirty && !isProcessing) {
+                sendMessage();
+            }
+        };
+
+        /** Sends the user message, initiates AI fetching, and handles loading states. */
         const sendMessage = async (inputQuery = null) => {
             if (isProcessing) return;
 
@@ -1178,7 +1153,7 @@
             if (!query) return;
 
             setUIProcessingState(true);
-
+            
             const isFirstMessage = getCurrentMessages().filter(m => !m.isLoading).length === 0;
 
             if (input) {
@@ -1199,10 +1174,10 @@
 
             // 3. Fetch Response
             const response = await fetchAIResponse(
-                currentSessionId,
-                query,
-                isFirstMessage,
-                getCurrentSession().mode
+                currentSessionId, 
+                query, 
+                isFirstMessage, 
+                getCurrentSession().mode 
             );
 
             // 4. Handle Response
@@ -1224,57 +1199,40 @@
 
             // 2. Update Session Title if needed
             if (response.generatedTitle) {
-                 updateSessionTitle(currentSessionId, response.generatedTitle, currentSession.mode);
+                updateSessionTitle(currentSessionId, response.generatedTitle, currentSession.mode);
             }
-
+            
             // 3. Handle Jarvis Mode Command Response
             if (currentSession.mode === SCREENS.JARVIS_MODE && response.isCommand) {
                 try {
                     const commandResponse = JSON.parse(response.text);
-                    ttsText = commandResponse.tts_response || displayText; 
-                    displayText = commandResponse.display_text || displayText; 
-                    commandData.command = commandResponse.command || response.command || userQuery;
-                    commandData.appName = commandResponse.app_name || response.app_name || 'System';
-
-                    // Insert the custom system command message
-                    embedHtml = renderCommandEmbed(commandData.appName, commandData.command); 
+                    ttsText = commandResponse.tts_response || displayText;
+                    displayText = commandResponse.display_text || displayText;
+                    commandData.command = commandResponse.command;
+                    commandData.app_name = commandResponse.app_name;
+                    
+                    // Execute Android Command
+                    if (commandData.command) {
+                        handleAndroidAppCommand(commandData.app_name, userQuery);
+                    }
                     
                 } catch (e) {
-                    console.error("Jarvis JSON parse error, falling back to raw text:", e);
-                    ttsText = displayText; 
-                    embedHtml = null;
+                    console.error("Failed to parse Jarvis JSON response:", e);
+                    ttsText = "Sorry, I received an invalid command response from the server.";
+                    displayText = "**Error:** Invalid command response from server.";
+                    commandData = {}; 
                 }
             }
 
 
             // 4. Add Final Foxy Message
-            const finalMessageId = addMessageToHistory('foxy', displayText, response.isCommand, embedHtml, false, commandData);
+            addMessageToHistory('foxy', displayText, response.isCommand, commandData);
             
-            // 5. Update UI (re-render or animate/scroll)
-            if (currentSession.mode === SCREENS.CHAT_MODE) {
-                renderChatMessages();
-                scrollToBottom('chat-messages-area'); 
-            } else if (currentSession.mode === SCREENS.JARVIS_MODE) {
-                // For Jarvis, scroll down and start speaking
-                renderChatMessages();
-                scrollToBottom('chat-messages-area'); 
-                
-                // Start the TTS (Jarvis Mode specific)
-                if (ttsText) {
-                    setUIProcessingState(true); // Re-lock input while speaking
-                    speak(ttsText);
-                }
-            } else {
-                 renderChatMessages();
-                 scrollToBottom('chat-messages-area'); // **FIX: Scroll to Foxy message**
-            }
-
-            // 6. Final State Update
-            setUIProcessingState(false);
-            if (currentScreen === SCREENS.CHAT_MODE) {
-                const input = document.getElementById('chat-input');
-                if (input) input.focus();
-            }
+            // 5. Speak and Finalize
+            setUIProcessingState(false); // Must come before render to enable input
+            renderChatMessages();
+            scrollToBottom('chat-messages-area'); 
+            speak(ttsText);
         };
 
         // --- RENDERING FUNCTIONS (JSX-like HTML generation) ---
@@ -1287,16 +1245,14 @@
             if (!historyList) return;
 
             historyList.innerHTML = '';
-
             let lastMode = null;
+
             // Sort: Jarvis sessions first, then Chat sessions, both newest first
             const sortedSessions = allSessions.sort((a, b) => {
                 if (a.mode === 'jarvis' && b.mode === 'chat') return -1;
                 if (a.mode === 'chat' && b.mode === 'jarvis') return 1;
-                
                 return new Date(b.messages[0]?.timestamp || 0) - new Date(a.messages[0]?.timestamp || 0);
             });
-
 
             sortedSessions.forEach(session => {
                 // Add separators if mode changes
@@ -1315,30 +1271,25 @@
                 listItem.onclick = () => switchSession(session.id);
                 listItem.innerHTML = `
                     <div class="flex items-center space-x-2 w-10/12 truncate">
-                        ${session.mode === 'jarvis' ? 
-                           `<svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>` : 
-                           `<svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`
-                        }
-                        <span title="${session.title}" class="truncate">${session.title}</span>
+                        ${session.mode === 'jarvis' ? `<svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>` : `<svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`}
+                        <span class="truncate">${session.title}</span>
                     </div>
-                    <button onclick="event.stopPropagation(); deleteSession('${session.id}')" 
-                            class="opacity-0 group-hover:opacity-100 p-1 rounded-full text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-opacity">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
+                    ${session.id !== currentSessionId ? `
+                        <button onclick="event.stopPropagation(); if(confirm('Are you sure you want to delete this session?')) deleteSession('${session.id}')"
+                            class="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-900/50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    ` : ''}
                 `;
                 historyList.appendChild(listItem);
             });
-
-            // Ensure the history list container visibility is updated 
-            updateHistoryVisibility();
         };
 
-
-        /** Generates the HTML for the sidebar. */
+        /** Generates the HTML for the application sidebar. */
         const renderSidebar = () => {
             return `
-                <div id="sidebar" class="fixed z-50 lg:relative lg:translate-x-0 w-72 h-full bg-gray-900 border-r border-gray-800 shadow-xl flex flex-col transition-transform duration-300 ease-snappy ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
-                    <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-gray-900 z-50 transform lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out border-r border-gray-800 shadow-xl flex flex-col">
+                    <div class="p-4 flex items-center justify-between border-b border-gray-800">
                         <div class="flex items-center">
                             <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0 mr-2"/>
                             <span class="text-xl font-bold text-cyan-400 mr-2">Foxy AI</span>
@@ -1348,7 +1299,7 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-
+                    
                     <div class="p-4">
                         <button onclick="startNewSession(currentScreen === SCREENS.JARVIS_MODE ? SCREENS.JARVIS_MODE : SCREENS.CHAT_MODE); updateScreen();" class="w-full bg-cyan-600 hover:bg-cyan-700 text-black font-semibold py-2 px-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -1358,385 +1309,343 @@
 
                     <div class="flex-grow overflow-y-auto px-4 pb-4">
                         <div class="flex items-center justify-between mb-3 cursor-pointer text-gray-400 hover:text-white transition-colors" onclick="toggleHistory()">
-                             <h3 class="text-xs font-semibold uppercase">Session History</h3>
-                             <svg id="toggle-history-icon" class="w-4 h-4 transition-transform duration-300 ${isHistoryOpen ? '' : 'rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <h3 class="text-xs font-semibold uppercase">Session History</h3>
+                            <svg id="toggle-history-icon" class="w-4 h-4 transition-transform duration-300 ${isHistoryOpen ? '' : 'rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                         </div>
-                        
-                        <ul id="session-history-container" class="space-y-1 overflow-hidden transition-all duration-300 ease-snappy ${isHistoryOpen ? 'opacity-100' : 'opacity-0'}" style="max-height: ${isHistoryOpen ? '999px' : '0'}">
+                        <div id="session-history-container" class="overflow-hidden transition-all duration-300 ease-in-out" style="max-height: ${isHistoryOpen ? '500px' : '0'};">
                             <ul id="session-history-list" class="space-y-1">
                                 </ul>
-                        </ul>
+                        </div>
                     </div>
 
-                    <div class="p-4 border-t border-gray-800 flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-sm font-bold text-black">${userName ? userName.charAt(0).toUpperCase() : 'G'}</div>
-                            <span class="text-sm font-semibold text-white">${userName || 'Guest'}</span>
-                        </div>
-                        <button onclick="setScreen(SCREENS.SETTINGS)" class="p-2 rounded-full text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37zM12 15a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                    <div class="p-4 border-t border-gray-800">
+                         <button onclick="setScreen(SCREENS.SETTINGS)" class="w-full text-left flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-800/70 hover:text-white transition-all duration-200">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94
+                                
+                                <span class="ml-3">Settings</span>
+                            </button>
+                        <button onclick="handleModeSelection(SCREENS.MODE_SELECTION)" class="w-full text-left flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-800/70 hover:text-white transition-all duration-200 mt-2">
+                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9.25 10.5M10.75 17L11.25 10.5M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
+                            <span class="ml-3">Change Mode</span>
                         </button>
                     </div>
                 </div>
             `;
         };
         
-        const renderLoadingScreen = () => {
-            return `
-                 <div class="flex items-center justify-center h-full w-full">
-                    <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <p class="text-lg text-gray-400 ml-4">Initializing Foxy AI...</p>
-                 </div>
+        /** Generates the main application container HTML based on the current screen. */
+        const renderMainContent = () => {
+            let content = '';
+            
+            if (currentScreen === SCREENS.ONBOARDING_NAME) {
+                content = renderOnboardingNameScreen();
+            } else if (currentScreen === SCREENS.WELCOME) {
+                content = renderWelcomeScreen();
+            } else if (currentScreen === SCREENS.MODE_SELECTION) {
+                content = renderModeSelectionScreen();
+            } else if (currentScreen === SCREENS.CHAT_MODE) {
+                content = renderChatScreen();
+            } else if (currentScreen === SCREENS.JARVIS_MODE) {
+                content = renderJarvisModeScreen();
+            } else if (currentScreen === SCREENS.SETTINGS) {
+                content = renderSettingsScreen();
+            } else {
+                 content = renderLoadingScreen();
+            }
+
+            // The main content area wrapper, ensures smooth transition
+            const mainContentWrapper = `
+                <div id="main-content-area" class="flex-grow flex flex-col relative transition-all duration-300 ease-in-out ${isSidebarOpen && window.innerWidth >= 1024 ? 'lg:ml-72' : ''}">
+                    ${content}
+                </div>
             `;
+            return mainContentWrapper;
         };
 
+        /** Generates the Onboarding Name screen. */
         const renderOnboardingNameScreen = () => {
             return `
-                 <div class="flex items-center justify-center h-full w-full animate-fadeIn">
-                    <div class="glass-panel p-8 w-full max-w-md text-center">
-                        <h2 class="text-3xl font-extrabold text-white mb-2">Welcome to Foxy AI</h2>
-                        <p class="text-gray-400 mb-6">What should I call you?</p>
-                        <input id="name-input" type="text" placeholder="Enter your name" class="w-full p-3 mb-4 bg-gray-700/50 border border-cyan-700/50 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" onkeyup="if(event.key==='Enter')handleNameSubmission()" maxlength="50" />
-                        <button onclick="handleNameSubmission()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-black font-semibold py-3 rounded-lg shadow-xl transition-all duration-200">
-                            Let's Start
+                <div class="flex flex-col items-center justify-center flex-grow p-6 h-full">
+                    <div class="glass-panel p-8 max-w-lg w-full text-center animate-fadeAndScale">
+                        <img src="foxy.png" alt="Foxy Logo" class="w-20 h-20 mx-auto mb-4"/>
+                        <h1 class="text-3xl font-bold text-cyan-400 mb-2">Welcome to Foxy AI</h1>
+                        <p class="text-gray-400 mb-6">Let's get started. What's your name?</p>
+                        <input id="name-input" type="text" placeholder="Enter your name..." class="w-full p-3 mb-4 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-lg" onkeypress="if(event.key === 'Enter') handleNameSubmission()"/>
+                        <button onclick="handleNameSubmission()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-black font-bold py-3 px-4 rounded-xl transition-all duration-200 text-lg shadow-md hover:shadow-cyan-500/50">
+                            Continue
                         </button>
                     </div>
-                 </div>
+                </div>
             `;
         };
 
+        /** Generates the Welcome screen. */
         const renderWelcomeScreen = () => {
              return `
-                 <div class="flex flex-col items-center justify-center h-full w-full animate-fadeIn">
-                    <div class="glass-panel p-10 w-full max-w-xl text-center">
-                        <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
-                        <h1 class="text-4xl font-extrabold text-white mb-4">Hello, ${userName}! 👋</h1>
-                        <p class="text-xl text-gray-400 mb-8">I am Foxy, your AI Assistant. How may I assist you today?</p>
+                <div class="flex flex-col items-center justify-center flex-grow p-6 h-full">
+                    <div class="glass-panel p-8 max-w-2xl w-full text-center animate-fadeAndScale">
+                        <img src="foxy.png" alt="Foxy Logo" class="w-24 h-24 mx-auto mb-6"/>
+                        <h1 class="text-4xl font-extrabold text-cyan-400 mb-4">Hello, ${userName || 'Guest'}!</h1>
+                        <p class="text-xl text-gray-300 mb-8">I'm Foxy, your dedicated AI Assistant. How would you like to interact today?</p>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button onclick="handleModeSelection(SCREENS.CHAT_MODE)" class="glass-panel p-6 text-left hover:border-cyan-500 border-2 border-transparent transition-all duration-200">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-8 h-8 text-green-400 mr-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                                    <h2 class="text-2xl font-bold text-white">Chat Mode</h2>
-                                </div>
-                                <p class="text-gray-400 text-sm">Have a natural, continuous conversation with memory.</p>
+                        <div class="space-y-4">
+                            <button onclick="handleModeSelection(SCREENS.CHAT_MODE)" class="w-full flex items-center justify-between p-4 bg-gray-800/70 hover:bg-cyan-700/50 rounded-xl transition-all duration-300 group">
+                                <span class="flex items-center">
+                                    <svg class="w-8 h-8 mr-4 text-cyan-400 group-hover:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                                    <span class="text-xl font-semibold text-white">Chat Mode</span>
+                                </span>
+                                <svg class="w-6 h-6 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </button>
-                            <button onclick="handleModeSelection(SCREENS.JARVIS_MODE)" class="glass-panel p-6 text-left hover:border-red-500 border-2 border-transparent transition-all duration-200">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-8 h-8 text-red-400 mr-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>
-                                    <h2 class="text-2xl font-bold text-white">Jarvis Mode</h2>
-                                </div>
-                                <p class="text-gray-400 text-sm">Issue short, specific commands for quick actions and TTS feedback.</p>
+                            
+                            <button onclick="handleModeSelection(SCREENS.JARVIS_MODE)" class="w-full flex items-center justify-between p-4 bg-gray-800/70 hover:bg-cyan-700/50 rounded-xl transition-all duration-300 group">
+                                <span class="flex items-center">
+                                    <svg class="w-8 h-8 mr-4 text-red-400 group-hover:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>
+                                    <span class="text-xl font-semibold text-white">Jarvis Command Mode</span>
+                                </span>
+                                <svg class="w-6 h-6 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </button>
                         </div>
 
-                        <button onclick="setScreen(SCREENS.SETTINGS)" class="mt-8 text-sm font-semibold text-gray-500 hover:text-white transition-colors flex items-center mx-auto">
-                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37zM12 15a3 3 0 100-6 3 3 0 000 6z"/></svg>
-                            Settings
-                        </button>
+                        <p class="text-sm text-gray-500 mt-6">You can change modes or access settings anytime from the sidebar.</p>
                     </div>
-                 </div>
+                </div>
              `;
         };
 
-        const renderChatModeScreen = () => {
-            const hasMessages = getCurrentMessages().filter(m => !m.isLoading).length > 0;
-            return `
-                ${renderSidebar()}
-                <div id="main-content-area" class="flex-grow flex flex-col h-full lg:ml-${isSidebarOpen ? '72' : '0'} transition-all duration-300">
-                    <div class="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0 bg-gray-900/90 backdrop-blur-sm">
-                        <button onclick="toggleSidebar()" class="p-2 rounded-full lg:hidden text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-                        </button>
-                        <div class="text-lg font-bold text-white truncate max-w-[200px] sm:max-w-none">
-                            ${getCurrentSession()?.title || 'New Chat'}
-                        </div>
-                        <button onclick="handleModeSelection(SCREENS.MODE_SELECTION)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors">
-                            Switch Mode
-                        </button>
-                    </div>
+        /** Generates the Mode Selection screen. (Re-usable for main selection) */
+        const renderModeSelectionScreen = () => {
+            return renderWelcomeScreen(); 
+        };
 
-                    <div id="chat-messages-area" class="flex-grow overflow-y-auto pt-4 pb-20 scroll-smooth relative">
-                        ${!hasMessages ? `
-                            <div class="flex items-center justify-center h-full w-full text-center p-8 absolute inset-0">
-                                <div class="glass-panel p-8 max-w-lg">
-                                    <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
-                                    <h2 class="text-2xl font-bold mb-2">Start a new Chat</h2>
-                                    <p class="text-gray-400">Ask me anything, **${userName}**! I have full memory of this conversation.</p>
+        /** Generates the Jarvis Mode screen. */
+        const renderJarvisModeScreen = () => {
+             const session = getCurrentSession();
+             const sessionTitle = session ? session.title : 'Jarvis Command';
+
+             return `
+                 <div class="flex flex-col flex-grow h-screen">
+                    ${renderHeader(sessionTitle, session ? session.mode : 'jarvis')}
+                    
+                    <div id="chat-messages-area" class="flex-grow overflow-y-auto bg-gray-950 pt-4 pb-20">
+                        <div class="flex flex-col items-center justify-center py-12 text-center text-gray-400 animate-fadeIn">
+                             <div id="jarvis-orb" onclick="toggleJarvisListening(!isSTTActive)" class="w-48 h-48 bg-gray-700/70 rounded-full flex items-center justify-center cursor-pointer mb-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                                <div id="jarvis-icon">
+                                     </div>
+                             </div>
+                             <h2 id="jarvis-title-status" class="text-2xl font-bold text-white mb-2">Jarvis Mode: Ready</h2>
+                             <p class="text-md text-gray-400 animate-subtitleEffect" id="jarvis-subtitle-status">Tap the orb or speak a command.</p>
+                        </div>
+                        </div>
+                    
+                    ${renderInputBar()}
+                </div>
+             `;
+        };
+        
+        /** Generates the Chat Mode screen. */
+        const renderChatScreen = () => {
+            const session = getCurrentSession();
+            const sessionTitle = session ? session.title : 'New Chat';
+
+            return `
+                 <div class="flex flex-col flex-grow h-screen">
+                    ${renderHeader(sessionTitle, session ? session.mode : 'chat')}
+                    
+                    <div id="chat-messages-area" class="flex-grow overflow-y-auto bg-gray-950 pt-4 pb-20">
+                        <div class="foxy-message-container">
+                            <div class="foxy-message-content flex items-start space-x-3">
+                                <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0"/>
+                                <div class="text-base text-gray-200 leading-relaxed max-w-full foxy-response-target">
+                                    <p class="animate-smoothFadeIn" style="animation-delay: 0.1s;">Hello **[userName]**! I'm Foxy, your AI Assistant. Ask me anything, or try tapping the mic button for voice input!</p>
                                 </div>
                             </div>
-                        ` : ''}
+                        </div>
                     </div>
+                    
+                    ${renderInputBar()}
+                </div>
+            `;
+        };
 
-                    <div class="fixed bottom-0 left-0 lg:left-72 right-0 p-4 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 shadow-2xl transition-all duration-300">
-                        <div class="max-w-4xl mx-auto flex items-end">
-                            <button id="stt-mic-button" onclick="toggleSTT()" class="p-3 mb-1 rounded-full text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Start Voice Input">
+        /** Generates the shared header. */
+        const renderHeader = (title, mode) => {
+            const currentSession = getCurrentSession();
+            
+            return `
+                <div class="sticky top-0 bg-gray-900/90 backdrop-blur-md z-40 p-4 border-b border-gray-800 shadow-lg flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="p-2 mr-3 rounded-full hover:bg-gray-800 text-gray-400 lg:hidden">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        </button>
+                        <h1 class="text-xl font-bold text-white truncate max-w-xs md:max-w-md">${title}</h1>
+                        <span class="ml-3 text-xs px-2 py-0.5 rounded-full ${mode === 'jarvis' ? 'bg-red-900/50 text-red-300' : 'bg-cyan-900/50 text-cyan-300'}">
+                            ${mode === 'jarvis' ? 'COMMAND MODE' : 'CHAT MODE'}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="if(confirm('Are you sure you want to delete this session?')) deleteSession('${currentSessionId}')" class="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-red-500 transition-colors" title="Delete Session">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        <button onclick="setScreen(SCREENS.SETTINGS)" class="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white transition-colors" title="Settings">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37zM12 15a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        /** Generates the shared input bar. */
+        const renderInputBar = () => {
+            const isJarvis = currentScreen === SCREENS.JARVIS_MODE;
+            return `
+                <div class="fixed bottom-0 w-full bg-gray-900/90 backdrop-blur-md p-4 border-t border-gray-800 shadow-2xl flex justify-center z-40">
+                    <div class="max-w-4xl w-full flex items-center space-x-3">
+                        ${isJarvis ? `
+                            <button onclick="toggleJarvisListening(!isSTTActive)" class="p-4 rounded-full bg-gray-800 text-cyan-400 transition-colors duration-200 hover:bg-gray-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-cyan-500" title="Jarvis Listen Toggle">
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.93-3 7-5.3 7S6.7 14.93 6.7 11H5c0 4.19 3.33 7.6 7 8v3h2v-3c3.67-.4 7-3.81 7-8h-1.7z"/></svg>
                             </button>
-
-                            <textarea id="chat-input" 
-                                class="flex-grow p-3 mx-2 bg-gray-800/70 border border-gray-700/50 rounded-xl text-white resize-none focus:ring-2 focus:ring-cyan-500 focus:outline-none placeholder:text-gray-500 transition-all duration-150 max-h-40" 
-                                placeholder="Ask Foxy anything..." 
-                                rows="1"
-                                oninput="this.style.height='auto'; this.style.height=(this.scrollHeight)+'px'; updateInputActiveState()"
-                                onkeydown="handleInputKey(event)"
-                            ></textarea>
-
-                            <button id="chat-send-button" onclick="sendMessage()" disabled 
-                                class="p-3 mb-1 rounded-full text-black bg-gray-700 font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Send Message">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        ` : `
+                            <button id="stt-mic-button" onclick="toggleSTT()" class="p-3 rounded-xl bg-gray-800 text-gray-400 transition-colors duration-200 hover:bg-gray-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50" title="Start Voice Input">
+                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.93-3 7-5.3 7S6.7 14.93 6.7 11H5c0 4.19 3.33 7.6 7 8v3h2v-3c3.67-.4 7-3.81 7-8h-1.7z"/></svg>
                             </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
+                        `}
 
-        const renderJarvisModeScreen = () => {
-            const hasMessages = getCurrentMessages().filter(m => !m.isLoading).length > 0;
-            return `
-                ${renderSidebar()}
-                <div id="main-content-area" class="flex-grow flex flex-col h-full lg:ml-${isSidebarOpen ? '72' : '0'} transition-all duration-300">
-                    <div class="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0 bg-gray-900/90 backdrop-blur-sm">
-                        <button onclick="toggleSidebar()" class="p-2 rounded-full lg:hidden text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-                        </button>
-                        <div class="text-lg font-bold text-white truncate max-w-[200px] sm:max-w-none text-red-400">
-                            Jarvis Mode
-                        </div>
-                        <button onclick="handleModeSelection(SCREENS.MODE_SELECTION)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors">
-                            Switch Mode
-                        </button>
-                    </div>
-
-                    <div class="flex flex-col items-center justify-start p-8 flex-shrink-0 bg-gray-900/80 border-b border-gray-800">
-                        <div id="jarvis-orb" onclick="toggleJarvisListening(!isSTTActive)" 
-                            class="w-32 h-32 rounded-full border-4 border-gray-600/50 flex items-center justify-center cursor-pointer transition-all duration-300 animate-orbPulse bg-gray-700/70">
-                            <div id="jarvis-icon" class="transition-colors duration-300">
-                                <svg class="w-16 h-16 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>
-                            </div>
-                        </div>
-                        <p id="jarvis-title-status" class="mt-4 text-xl font-semibold text-white">Jarvis Mode: Ready</p>
-                        <p id="jarvis-subtitle" class="text-sm text-gray-400 h-6 overflow-hidden mt-1 transition-all duration-300">Tap the orb or speak a command.</p>
-                    </div>
-
-                    <div id="chat-messages-area" class="flex-grow overflow-y-auto scroll-smooth relative border-t border-gray-800">
-                        ${!hasMessages ? `
-                            <div class="flex items-center justify-center h-full w-full text-center p-8 absolute inset-0">
-                                <div class="glass-panel p-8 max-w-lg">
-                                    <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
-                                    <h2 class="text-2xl font-bold mb-2">Jarvis Command Mode</h2>
-                                    <p class="text-gray-400">Speak commands like: "**Open Calculator**" or "**Check Weather**".</p>
-                                    <p class="text-gray-400">Remember, I know you as **${userName}**.</p>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        };
-
-        const renderSettingsScreen = () => {
-            const themes = Object.keys(THEMES);
-            const colors = Object.keys(ACCENT_COLORS);
-
-            return `
-                ${renderSidebar()}
-                <div id="main-content-area" class="flex-grow p-8 transition-all duration-300 overflow-y-auto lg:ml-${isSidebarOpen ? '72' : '0'}">
-                    <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
-                        <h1 class="text-3xl font-extrabold text-white">Settings</h1>
-                        <button onclick="handleModeSelection(lastNonSettingsScreen)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                            Back to ${lastNonSettingsScreen === SCREENS.JARVIS_MODE ? 'Jarvis Mode' : (lastNonSettingsScreen === SCREENS.CHAT_MODE ? 'Chat Mode' : 'Welcome')}
-                        </button>
-                    </div>
-
-                    <div class="space-y-8 max-w-3xl mx-auto">
+                        <input id="chat-input" type="text" placeholder="${isProcessing ? 'Foxy is thinking...' : (isJarvis ? 'Type a command...' : 'Ask Foxy anything...')}" 
+                                class="flex-grow p-3 bg-gray-800/80 border border-gray-700 rounded-xl text-lg disabled:bg-gray-700 disabled:text-gray-500 focus:ring-cyan-500 focus:border-cyan-500 transition-all" 
+                                oninput="handleInputKey(event)" onkeypress="handleInputKey(event)" ${isProcessing ? 'disabled' : ''}/>
                         
-                        <div class="glass-panel p-6">
-                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">1. Theme & Appearance</h2>
+                        <button id="chat-send-button" onclick="sendMessage()" 
+                                class="p-3 rounded-xl bg-gray-700 text-gray-400 transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed" 
+                                disabled title="Send Message">
+                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+        
+        /** Animates a subtitle message on the Jarvis screen. */
+        const animateSubtitle = (text) => {
+            jarvisSubtitle = text;
+            const subtitleEl = document.getElementById('jarvis-subtitle-status');
+            if (subtitleEl) {
+                // Apply a quick fade out before setting new text
+                subtitleEl.style.animation = 'none'; 
+                subtitleEl.offsetHeight; // Trigger reflow
+                subtitleEl.textContent = text;
+                // Re-apply the fade-in animation
+                subtitleEl.style.animation = 'subtitleEffect 0.5s cubic-bezier(.2,.9,.3,1) forwards'; 
+            }
+        };
 
-                            <div class="mb-6">
-                                <h3 class="text-lg font-medium text-white mb-2">Select Theme:</h3>
+        /** Renders the Settings screen. (Corrected to remove Gemini API mention) */
+        const renderSettingsScreen = () => {
+            const accentOptions = Object.keys(ACCENT_COLORS).map(key => {
+                const colorValue = ACCENT_COLORS[key];
+                const isSelected = colorValue === accentColor;
+                return `
+                    <button onclick="setAccentColor('${colorValue}')" class="w-12 h-12 rounded-full shadow-lg border-2 ${isSelected ? 'border-white ring-2 ring-offset-2 ring-offset-gray-900' : 'border-gray-700 hover:border-white'}" 
+                            style="background-color: rgb(${colorValue}); ${isSelected ? `ring-color: rgb(${colorValue})` : ''}" 
+                            title="${key.charAt(0) + key.slice(1).toLowerCase()}">
+                        ${isSelected ? `<svg class="w-full h-full p-2 text-black" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"/></svg>` : ''}
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                 <div class="flex flex-col flex-grow h-screen">
+                    ${renderHeader('Application Settings', 'settings')}
+                    
+                    <div class="flex-grow overflow-y-auto p-6 bg-gray-950">
+                        <div class="max-w-4xl mx-auto space-y-8">
+                            
+                            <div class="glass-panel p-6">
+                                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">1. User Profile</h2>
+                                <p class="text-gray-400 mb-4">You are currently logged in as **${userName || 'Guest'}**.</p>
+                                <button onclick="saveUserName(null); setScreen(SCREENS.ONBOARDING_NAME);" class="text-red-400 hover:text-red-500 transition-colors p-2 rounded-lg border border-red-900/50 hover:bg-red-900/20">
+                                    <span class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m-4 0v-1M6 16v1a2 2 0 002 2h8a2 2 0 002-2v-1M6 16H3M21 16h-3M6 16v-4m0 0V4a2 2 0 012-2h8a2 2 0 012 2v8m-4-4H8"/></svg>
+                                        Change/Reset Name
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <div class="glass-panel p-6">
+                                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">2. Appearance</h2>
+                                
+                                <label class="block text-gray-300 mb-2">Theme</label>
+                                <div class="flex space-x-4 mb-6">
+                                    <button onclick="setTheme(THEMES.DARK)" class="p-3 rounded-xl border-2 ${theme === THEMES.DARK ? 'border-cyan-500 bg-gray-800' : 'border-gray-700 hover:border-gray-500'} transition-all duration-200">
+                                        Classic Dark
+                                    </button>
+                                    <button onclick="setTheme(THEMES.GLASSMORPHISM)" class="p-3 rounded-xl border-2 ${theme === THEMES.GLASSMORPHISM ? 'border-cyan-500 bg-gray-800' : 'border-gray-700 hover:border-gray-500'} transition-all duration-200">
+                                        Liquid Glass
+                                    </button>
+                                </div>
+                                
+                                <label class="block text-gray-300 mb-4">Accent Color</label>
                                 <div class="flex space-x-4">
-                                    ${themes.map(t => `
-                                        <button onclick="setTheme(THEMES.${t})" 
-                                                class="flex-1 p-3 rounded-lg font-semibold transition-all duration-200 ${
-                                                    theme === THEMES[t] 
-                                                        ? 'bg-cyan-600 text-black shadow-lg' 
-                                                        : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/70'
-                                                }">
-                                            ${t.charAt(0).toUpperCase() + t.slice(1)}
-                                        </button>
-                                    `).join('')}
+                                    ${accentOptions}
                                 </div>
                             </div>
-
-                            <div>
-                                <h3 class="text-lg font-medium text-white mb-2">Accent Color:</h3>
-                                <div class="grid grid-cols-5 gap-3">
-                                    ${colors.map(c => {
-                                        const colorValue = ACCENT_COLORS[c];
-                                        return `
-                                            <button onclick="setAccentColor(ACCENT_COLORS.${c})" 
-                                                    class="h-10 w-full rounded-full transition-all duration-200 border-2 ${
-                                                        accentColor === colorValue 
-                                                            ? 'border-white ring-4 ring-offset-2 ring-offset-gray-900' 
-                                                            : 'border-transparent hover:ring-2 hover:ring-offset-2 hover:ring-offset-gray-900'
-                                                    }" 
-                                                    style="background-color: rgba(${colorValue}, 0.8); ${
-                                                        accentColor === colorValue ? `box-shadow: 0 0 10px rgba(${colorValue}, 0.5); ring-color: rgba(${colorValue}, 0.9);` : `hover:ring-color: rgba(${colorValue}, 0.5);`
-                                                    }"
-                                                    title="${c.charAt(0).toUpperCase() + c.slice(1)}">
-                                            </button>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="glass-panel p-6">
-                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">2. Voice Features</h2>
-                            <p class="text-gray-400 mb-4">Voice capabilities (TTS/STT) are automatically enabled if supported by your browser and permissions are granted.</p>
-                            <p class="text-sm text-gray-500">Status: ${hasSpeechAPI() ? '<span class="text-green-400">Supported</span>' : '<span class="text-red-400">Not Supported or Permissions Denied</span>'}</p>
-                        </div>
-
-                        <div class="glass-panel p-6">
-                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">3. Data Management</h2>
-                            <div class="flex justify-between items-center mb-4">
-                                <p class="text-gray-400">Clear all chat history sessions from local storage.</p>
-                                <button onclick="if(confirm('Are you sure you want to delete ALL chat sessions? This cannot be undone.')) deleteAllSessions()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200">
-                                    Clear History
+                            
+                            <div class="glass-panel p-6">
+                                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">3. Data Management</h2>
+                                <p class="text-gray-400 mb-4">Delete all chat history permanently from this device.</p>
+                                <button onclick="if(confirm('WARNING: Are you sure you want to delete ALL chat history? This cannot be undone.')) deleteAllSessions()" class="text-red-400 hover:text-red-500 transition-colors p-2 rounded-lg border border-red-900/50 hover:bg-red-900/20">
+                                     <span class="flex items-center">
+                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                         Delete All Sessions
+                                    </span>
                                 </button>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <p class="text-gray-400">Change your saved username: <strong>${userName}</strong></p>
-                                <button onclick="saveUserName(null); setScreen(SCREENS.ONBOARDING_NAME);" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200">
-                                    Change Name
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="glass-panel p-6">
-                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">4. Credits</h2>
-                            <p class="text-gray-400 mb-2">Foxy AI Assistant - Nomix Edition was developed by **Nomix**.</p>
-                            <p class="text-gray-400 flex items-center">
-                                Follow for more updates:
-                                <a href="[https://www.youtube.com/@Nomixofficial0](https://www.youtube.com/@Nomixofficial0)" target="_blank" class="ml-2 text-red-500 hover:text-red-400 transition-colors flex items-center font-medium">
-                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.613-.243-11.417-.243-15.03 0C1.885 3.427 0 5.313 0 7.42v9.16c0 2.107 1.885 3.993 4.585 4.236 3.613.243 11.417.243 15.03 0 2.7-.243 4.585-2.129 4.585-4.236V7.42c0-2.107-1.885-3.993-4.585-4.236zM9.545 15.55L15.344 12 9.545 8.45v7.1z"/></svg>
-                                    @Nomixofficial0
-                                </a>
-                            </p>
+                            <div class="glass-panel p-6">
+                                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">4. Credits</h2>
+                                <p class="text-gray-400 mb-2">Developed by **Nomix**.</p>
+                                <p class="text-gray-400">Powered by a **secure AI Model**.</p> 
+                                <p class="text-sm text-gray-500 mt-4">Foxy AI Assistant - Nomix Edition v1.0.0</p>
+                            </div>
+
                         </div>
-                        </div>
+                    </div>
                 </div>
             `;
         };
 
-        // --- Main Router and Utility Functions ---
-
-        /** The main function to update the DOM based on the current screen state. */
+        /** Renders a simple loading screen (should only appear briefly on initial load). */
+        const renderLoadingScreen = () => {
+            return `
+                <div class="flex flex-col items-center justify-center flex-grow p-6 h-full animate-fadeIn">
+                    <img src="foxy.png" alt="Foxy Logo" class="w-24 h-24 mx-auto mb-4 animate-pulse"/>
+                    <h1 class="text-3xl font-bold text-cyan-400 mb-2">Loading Foxy AI...</h1>
+                    <p class="text-gray-400">Please wait.</p>
+                </div>
+            `;
+        };
+        
+        /** The main function to update and re-render the entire application state. */
         const updateScreen = () => {
-            const appRoot = document.getElementById('app-root');
-            if (!appRoot) return;
-
-            // Stop speech/listening before rendering a new view
-            stopSpeech();
-            toggleJarvisListening(false);
+            const root = document.getElementById('app-root');
+            if (!root) return;
             
-            let contentHTML = '';
-            let needsHistoryRender = false;
-            let needsPostRenderActions = true;
-
-            switch (currentScreen) {
-                case SCREENS.LOADING:
-                    contentHTML = renderLoadingScreen();
-                    needsPostRenderActions = false;
-                    break;
-                case SCREENS.ONBOARDING_NAME:
-                    contentHTML = renderOnboardingNameScreen();
-                    break;
-                case SCREENS.WELCOME:
-                    contentHTML = renderWelcomeScreen();
-                    break;
-                case SCREENS.MODE_SELECTION:
-                    // Mode selection is handled within renderWelcomeScreen
-                    contentHTML = renderWelcomeScreen(); 
-                    break;
-                case SCREENS.CHAT_MODE:
-                    contentHTML = renderChatModeScreen();
-                    needsHistoryRender = true;
-                    break;
-                case SCREENS.JARVIS_MODE:
-                    contentHTML = renderJarvisModeScreen();
-                    needsHistoryRender = true;
-                    break;
-                case SCREENS.SETTINGS:
-                    contentHTML = renderSettingsScreen();
-                    needsHistoryRender = true;
-                    break;
-                default:
-                    contentHTML = renderWelcomeScreen();
-                    break;
+            // 1. Render Sidebar and Main Content
+            root.innerHTML = renderSidebar() + renderMainContent();
+            
+            // 2. Re-render dynamic elements
+            renderSessionHistory();
+            
+            // 3. Update Jarvis/Chat specific visuals (if on those screens)
+            if (currentScreen === SCREENS.CHAT_MODE || currentScreen === SCREENS.JARVIS_MODE) {
+                renderChatMessages();
+                updateOrbVisuals(); // Re-initializes Jarvis Orb/Mic Button state
             }
+            
+            // 4. Update Input State (if Input exists)
+            updateInputActiveState();
 
-            // Update the main content
-            appRoot.innerHTML = contentHTML;
-
-            // Perform post-render actions
-            if (needsHistoryRender) {
-                renderSessionHistory();
-                renderChatMessages(); // Render messages if in a chat mode
-            }
-
-            // Specific focus/state updates
-            if (needsPostRenderActions) {
-                updateOrbVisuals();
-                updateInputActiveState(); // Ensure the send button is disabled if input is empty
-                scrollToBottom('chat-messages-area');
-
-                // Re-wire event listeners for current mode
-                const nameInput = document.getElementById('name-input');
-                if (nameInput) nameInput.focus();
-
-                const chatInput = document.getElementById('chat-input');
-                if (chatInput) chatInput.focus();
-
-                const sendButton = document.getElementById('chat-send-button');
-                if (sendButton) {
-                     sendButton.onclick = () => sendMessage();
-                }
-            }
-        };
-
-        /** Function to animate the Jarvis subtitle. */
-        const animateSubtitle = (text) => {
-            const subtitle = document.getElementById('jarvis-subtitle');
-            if (subtitle) {
-                subtitle.style.animation = 'none'; // Reset animation
-                subtitle.offsetHeight; // Trigger reflow
-                subtitle.style.animation = ''; // Re-enable animation for next update
-                subtitle.style.animation = 'subtitleEffect 0.5s var(--ease-snappy) forwards';
-                subtitle.textContent = text;
-            }
-        };
-
-        const loadSessions = () => {
-            allSessions = loadAllSessions();
-            if (allSessions.length === 0) {
-                startNewSession('chat');
-            } else {
-                // Try to restore the last active session, otherwise default to the newest one
-                const lastSessionId = localStorage.getItem('foxy_current_session_id');
-                const foundLast = allSessions.find(s => s.id === lastSessionId);
-                
-                if (foundLast) {
-                    currentSessionId = foundLast.id;
-                } else {
-                    currentSessionId = allSessions[0].id;
-                }
-            }
+            // 5. Ensure visibility state is correct after DOM update
+            updateHistoryVisibility(); 
         };
 
         /** Initializes the application state and renders the first screen. */
