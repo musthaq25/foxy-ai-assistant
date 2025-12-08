@@ -1,0 +1,2 @@
+[functions]
+  directory = "netlify-functions" # This tells Netlify to look for functions in this folder

@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Foxy AI Assistant - Nomix Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            startup: { ready: function () { MathJax.startup.defaultReady(); } }
+        };
+    </script>
+    <script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style id="custom-styles">
+        /* --- UI PROFESSIONALISM FIXES & ANIMATIONS --- */
+        
+        :root {
+            --glass-bg-default: rgba(17,24,39,0.7); 
+            --glass-border-default: rgba(12, 74, 110, 0.3); 
+            --ease-snappy: cubic-bezier(.2,.9,.3,1); 
+            --accent-color: 6, 182, 212; 
+            --liquid-overlay: rgba(var(--accent-color), 0.3); 
+            --glass-bg: var(--glass-bg-default);
+            --glass-border: var(--glass-border-default);
+        }
+
+        /* Base Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeAndScale { 
+            0% { opacity: 0; transform: scale(0.98); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
+        @keyframes slideInRight { 
+            0% { opacity: 0; transform: translateX(12px); } 
+            100% { opacity: 1; transform: translateX(0); } 
+        }
+        @keyframes orbPulse { 
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(var(--accent-color), 0.4); } 
+            50% { transform: scale(1.04); box-shadow: 0 0 25px rgba(var(--accent-color), 0.7); } 
+        }
+        @keyframes listeningPulse {
+            /* Now pulses with a green/emerald glow when listening */
+            0%, 100% { transform: scale(1.02); box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80; border-color: #4ade80; }
+            50% { transform: scale(1.06); box-shadow: 0 0 20px #4ade80, 0 0 36px #4ade80; border-color: #10b981; }
+        }
+        @keyframes subtitleEffect {
+            0% { opacity: 0; transform: translateY(8px) scale(.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes smoothFadeIn {
+            /* Key for paragraph-by-paragraph animation */
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* --- Sidebar & Transition Fixes --- */
+        #sidebar {
+            /* Smooth transition for transform */
+            transition: transform 350ms var(--ease-snappy), box-shadow 350ms var(--ease-snappy);
+        }
+        #main-content-area {
+            /* Smooth transitions for the main content shift */
+            transition: margin-left 350ms var(--ease-snappy);
+        }
+        /* Mobile fixes: main content doesn't need transform, sidebar is fixed */
+        @media (min-width: 1024px) {
+            .sidebar-shifted #main-content-area {
+                margin-left: 288px; /* Correctly shifts main content on desktop */
+                transform: none;
+            }
+        }
+        
+        /* Glass panel helpers */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); 
+            background-color: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7); 
+            backdrop-filter: blur(14px) saturate(150%); 
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            border-radius: 16px;
+            /* Using transform for hover effect provides better performance than other properties */
+            transition: transform 220ms var(--ease-snappy), box-shadow 220ms var(--ease-snappy), background-color 220ms var(--ease-snappy);
+        }
+        .glass-panel:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 40px rgba(var(--accent-color), 0.2), 0 0 1px rgba(var(--accent-color), 0.8);
+        }
+        
+        /* Foxy Message Container (Improved Gapping & Styling) */
+        .foxy-message-container {
+            width: 100%;
+            padding: 1.5rem 0; 
+            margin: 0; 
+            background-color: rgba(var(--accent-color), 0.05); 
+            border-top: 1px solid rgba(var(--accent-color), 0.1);
+            border-bottom: 1px solid rgba(var(--accent-color), 0.1);
+            margin-bottom: 1px; 
+            transition: background-color 300ms ease;
+        }
+        .foxy-message-content {
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 0 1.5rem; 
+        }
+        
+        /* AI Response Fade-In (Paragraph by Paragraph) */
+        .foxy-response-target > * { /* Target all top-level elements inside the response target */
+             opacity: 0;
+             animation: smoothFadeIn 0.8s var(--ease-snappy) forwards;
+        }
+        
+        /* User Message Container (Improved Gapping) */
+        .user-message-container {
+            align-self: flex-end;
+            max-width: 85%; 
+            margin: 0.5rem 1.5rem 0.5rem 0; 
+            word-wrap: break-word;
+            animation: slideInRight 0.3s ease-in;
+        }
+
+        .user-message-content {
+            background: linear-gradient(to right, rgba(var(--accent-color),0.8), rgba(var(--accent-color),0.9));
+            color: black;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem 1rem 0 1rem;
+            box-shadow: 0 0 10px rgba(var(--accent-color),0.5);
+            transition: box-shadow 300ms ease;
+        }
+        
+        /* Loading Message Styling (Left-aligned, not center) */
+        .loading-message-container {
+             width: 100%;
+             padding: 1.5rem 0;
+             margin: 0; 
+             background-color: rgba(var(--accent-color), 0.05); 
+             border-top: 1px solid rgba(var(--accent-color), 0.1);
+             border-bottom: 1px solid rgba(var(--accent-color), 0.1);
+             margin-bottom: 1px; 
+        }
+        .loading-message-content {
+             max-width: 800px;
+             margin: 0 auto; 
+             padding: 0 1.5rem; 
+             display: flex;
+             justify-content: flex-start; /* Foxy messages are left-aligned */
+        }
+
+
+        /* Scrollbar styles */
+        #chat-messages-area::-webkit-scrollbar { width: 8px; }
+        #chat-messages-area::-webkit-scrollbar-track { background: #0f1724; }
+        #chat-messages-area::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 6px; }
+
+        .send-button-active {
+            box-shadow: 0 0 15px rgba(var(--accent-color), 0.8), 0 0 5px rgba(var(--accent-color), 1);
+            background: linear-gradient(to bottom right, rgba(var(--accent-color), 1), rgba(var(--accent-color), 0.8));
+            color: black !important;
+        }
+        
+        /* Fix for code block overflow */
+        pre { 
+            white-space: pre-wrap; 
+            word-break: break-all;
+            padding: 1rem;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        
+        /* Liquid Glass Theme Overrides */
+        .theme-liquid-glass {
+            background: radial-gradient(circle at 10% 10%, var(--liquid-overlay) 0%, transparent 60%),
+                        radial-gradient(circle at 90% 90%, var(--liquid-overlay) 0%, transparent 60%),
+                        linear-gradient(135deg, #0a1122 0%, #00040f 100%);
+            background-size: 200% 200%;
+            animation: moveGradient 10s ease-in-out infinite alternate;
+        }
+    </style>
+    <link href='foxy.png' rel="icon" type="image/png"/>
+</head>
+<body class="bg-black text-white font-sans">
+    <div class="h-screen w-full bg-black flex" id="app-root">
+        </div>
+    <script>
+        // --- CRITICAL FIX 1: Robust Polyfill for crypto.randomUUID() ---
+        if (typeof crypto === 'undefined' || typeof crypto.randomUUID !== 'function') {
+            window.crypto = window.crypto || {};
+            window.crypto.randomUUID = () => {
+                const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+                return id;
+            };
+        }
+        
+        // --- THEME CONSTANTS ---
+        const THEMES = {
+            DARK: 'dark',
+            GLASSMORPHISM: 'glassmorphism'
+        };
+
+        const ACCENT_COLORS = {
+            CYAN: '6, 182, 212', 
+            PINK: '236, 72, 153',
+            EMERALD: '16, 185, 129',
+            INDIGO: '99, 102, 241',
+            ORANGE: '249, 115, 22'
+        };
+
+        // --- SPEECH API IMPLEMENTATION (TTS & STT) ---
+        
+        const SPEECH_RATE_SPEED = 1.0; 
+        let recognition = null; 
+        let isSpeaking = false;
+        let recognitionActive = false;
+        let recognitionStoppedForProcessing = false; 
+        let isSTTActive = false; 
+        let ttsVoicesLoaded = false;
+        
+        /** Ensures TTS voices are loaded. */
+        const loadTTSVoices = () => {
+            if (ttsVoicesLoaded) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                ttsVoicesLoaded = true;
+                console.log("TTS voices loaded.");
+            }
+        };
+
+        /** Initialize Web Speech API components. */
+        const initSpeechAPI = () => {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                setupRecognitionHandlers();
+                console.log("Speech Recognition Initialized.");
+            } else {
+                console.warn("Speech Recognition not supported in this browser.");
+            }
+            
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = loadTTSVoices;
+                loadTTSVoices(); // Try loading immediately
+            }
+        };
+
+        const hasSpeechAPI = () => {
+             return ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) && (window.speechSynthesis && ttsVoicesLoaded);
+        }
+
+        const stopSpeech = () => { 
+            if (window.speechSynthesis) {
+                 window.speechSynthesis.cancel();
+            }
+            isSpeaking = false;
+            updateOrbVisuals();
+        };
+
+        const speak = (text) => { 
+            // TTS ONLY ENABLED FOR JARVIS MODE
+            if (currentScreen !== SCREENS.JARVIS_MODE || !window.speechSynthesis || isSpeaking) return;
+            
+            // Clean up text for speech (only replace the markdown syntax, not the placeholder)
+            const cleanedText = text
+                                    .replace(/(\*\*|__|#)/g, '')
+                                    .replace(/`/g, '')
+                                    .replace(/\[userName\]/g, userName || 'Guest');
+                                    
+            if (!cleanedText.trim()) {
+                 console.warn("Attempted to speak empty text.");
+                 // Immediately release processing lock if there's nothing to say
+                 isSpeaking = false; 
+                 setUIProcessingState(false);
+                 updateOrbVisuals();
+                 if (currentScreen === SCREENS.JARVIS_MODE && !isProcessing) {
+                    toggleJarvisListening(true);
+                 }
+                 return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+            utterance.rate = SPEECH_RATE_SPEED;
+            
+            // Find the best voice: local en-US, then any en-US, then any voice
+            const voices = window.speechSynthesis.getVoices();
+            utterance.voice = voices.find(v => v.lang === 'en-US' && v.localService) || 
+                              voices.find(v => v.lang === 'en-US') || 
+                              voices[0] || 
+                              null;
+                              
+            if (!utterance.voice) {
+                 console.warn("No suitable TTS voice found. Speech will not be delivered.");
+                 isSpeaking = false; 
+                 setUIProcessingState(false); 
+                 updateOrbVisuals();
+                 if (currentScreen === SCREENS.JARVIS_MODE && !isProcessing) {
+                     toggleJarvisListening(true);
+                 }
+                 return;
+            }
+            
+            utterance.onstart = () => { isSpeaking = true; updateOrbVisuals(); };
+            utterance.onend = () => { 
+                isSpeaking = false; 
+                setUIProcessingState(false); 
+                updateOrbVisuals();
+                // If in Jarvis mode, resume listening after speaking
+                if (currentScreen === SCREENS.JARVIS_MODE && !isProcessing) {
+                     toggleJarvisListening(true);
+                }
+            };
+            utterance.onerror = (event) => {
+                console.error("Speech Synthesis Error:", event.error);
+                isSpeaking = false;
+                setUIProcessingState(false);
+                updateOrbVisuals();
+                if (currentScreen === SCREENS.JARVIS_MODE && !isProcessing) {
+                     toggleJarvisListening(true);
+                }
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        };
+        
+        const setupRecognitionHandlers = () => {
+            if (!recognition) return;
+
+            recognition.onresult = (event) => {
+                if (recognitionStoppedForProcessing) return; 
+
+                const result = event.results[0][0].transcript;
+                recognitionStoppedForProcessing = true; // Stop processing new results
+
+                if (currentScreen === SCREENS.JARVIS_MODE) {
+                    animateSubtitle(`Command Received: "${result}"`);
+                    sendMessage(result); 
+                } else if (currentScreen === SCREENS.CHAT_MODE) {
+                    const input = document.getElementById('chat-input');
+                    if (input) {
+                        input.value = result;
+                        handleInputKey({key: 'input', target: input});
+                    }
+                    toggleSTT(); // Stop the mic
+                }
+            };
+
+            recognition.onend = () => {
+                recognitionActive = false;
+                isSTTActive = false;
+                updateOrbVisuals();
+                if (currentScreen === SCREENS.JARVIS_MODE && !recognitionStoppedForProcessing && !isSpeaking && !isProcessing) {
+                    // Auto-restart listening in Jarvis mode
+                    toggleJarvisListening(true);
+                }
+                recognitionStoppedForProcessing = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Recognition error:', event.error);
+                animateSubtitle(`Voice Error: ${event.error}. Try again.`);
+                recognitionActive = false;
+                isSTTActive = false;
+                updateOrbVisuals();
+                recognitionStoppedForProcessing = false;
+                // If error, attempt to restart in Jarvis mode
+                if (currentScreen === SCREENS.JARVIS_MODE && !isProcessing && event.error !== 'not-allowed') {
+                     setTimeout(() => toggleJarvisListening(true), 1000);
+                }
+            };
+        };
+        
+        /** Toggles the listening state in Jarvis Mode */
+        const toggleJarvisListening = (shouldListen) => {
+            if (!hasSpeechAPI()) {
+                 animateSubtitle("Voice or TTS not supported or permission denied.");
+                 return;
+            }
+            
+            if (shouldListen && !recognitionActive && !isProcessing) {
+                stopSpeech(); // Ensure no current speech
+                try {
+                    recognition.start();
+                    recognitionActive = true;
+                    isSTTActive = true;
+                    animateSubtitle("Listening for command...");
+                    updateOrbVisuals();
+                } catch (e) {
+                    console.warn("Recognition start error:", e.message);
+                    recognitionActive = false;
+                    isSTTActive = false;
+                    animateSubtitle("Start failed. Check mic permission.");
+                }
+            } else if (!shouldListen && recognitionActive) {
+                recognition.stop();
+                recognitionActive = false;
+                isSTTActive = false;
+                animateSubtitle("Stopped listening.");
+                updateOrbVisuals();
+            } else if (isProcessing || isSpeaking) {
+                 animateSubtitle(isSpeaking ? "Speaking, please wait." : "Processing, please wait.");
+            }
+        };
+
+        const toggleSTT = () => { 
+            if (!hasSpeechAPI()) {
+                 alert("Speech Recognition not supported in your browser or device.");
+                 return;
+            }
+            if (isSTTActive) {
+                recognition.stop();
+            } else if (!isProcessing) {
+                try {
+                    recognition.start();
+                    isSTTActive = true;
+                    animateSubtitle("Mic active in Chat Mode. Speak now.");
+                } catch(e) {
+                     console.error("STT Start Error:", e);
+                     alert("Could not start voice input. Check mic permissions.");
+                }
+            }
+            updateOrbVisuals(); 
+        };
+        
+        /** Updates the Jarvis Orb and Chat Mic Button visuals (Crucial for TTS/STT feedback) */
+        const updateOrbVisuals = () => {
+            const orb = document.getElementById('jarvis-orb');
+            const icon = document.getElementById('jarvis-icon');
+            const title = document.getElementById('jarvis-title-status');
+            const micButton = document.getElementById('stt-mic-button');
+
+            // 1. Jarvis Orb Status
+            if (orb && icon && title) {
+                orb.classList.remove('animate-listeningPulse', 'bg-emerald-600/70', 'animate-orbPulse', 'bg-gray-700/70');
+                orb.classList.add('transition-all', 'duration-300');
+                
+                if (isSpeaking) {
+                    orb.classList.add('animate-orbPulse', `bg-[rgba(${accentColor},0.5)]`); // Use accent color for speaking pulse
+                    icon.innerHTML = `<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>`;
+                    title.textContent = "Jarvis Mode: Speaking...";
+                } else if (isSTTActive) {
+                    orb.classList.add('animate-listeningPulse', 'bg-emerald-600/70');
+                    icon.innerHTML = `<svg class="w-16 h-16 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.93-3 7-5.3 7S6.7 14.93 6.7 11H5c0 4.19 3.33 7.6 7 8v3h2v-3c3.67-.4 7-3.81 7-8h-1.7z"/></svg>`;
+                    title.textContent = "Jarvis Mode: Listening for Command";
+                } else if (isProcessing) {
+                    orb.classList.add('animate-orbPulse', 'bg-gray-700/70');
+                    icon.innerHTML = `<svg class="w-16 h-16 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.341 19l2.481-2.481m11.38-1.517l-2.482 2.481A8.001 8.001 0 004.341 4h-2.828"></path></svg>`;
+                    title.textContent = "Jarvis Mode: Processing Request...";
+                } else {
+                     orb.classList.add('bg-gray-700/70');
+                     icon.innerHTML = `<svg class="w-16 h-16 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>`;
+                     title.textContent = "Jarvis Mode: Ready";
+                     animateSubtitle("Tap the orb or speak a command.");
+                }
+            }
+            
+            // 2. Chat Mic Button Status
+            if (micButton) {
+                micButton.disabled = isProcessing || !hasSpeechAPI();
+                micButton.classList.toggle('opacity-50', isProcessing || !hasSpeechAPI());
+                micButton.classList.toggle('cursor-not-allowed', isProcessing || !hasSpeechAPI());
+                micButton.classList.remove('text-red-500', 'text-emerald-500', 'animate-pulse');
+                
+                if (isSTTActive && currentScreen === SCREENS.CHAT_MODE) {
+                    micButton.classList.add('text-emerald-500', 'animate-pulse');
+                    micButton.title = 'Listening... Tap to Stop';
+                } else {
+                    micButton.classList.add('text-gray-400', 'hover:text-white');
+                    micButton.title = hasSpeechAPI() ? 'Start Voice Input' : 'Voice Input Not Supported';
+                }
+            }
+        };
+        // --- End of Speech API Implementation ---
+
+
+        // --- Local Storage Keys ---
+        const STORAGE_KEY_USERNAME = 'foxy_user_name';
+        const STORAGE_KEY_CHATHISTORY = 'foxy_chat_sessions';
+        const STORAGE_KEY_THEME = 'foxy_theme';
+        const STORAGE_KEY_ACCENT = 'foxy_accent_color';
+        const STORAGE_KEY_LAST_SCREEN = 'foxy_last_screen'; 
+
+        // --- Core Application State and Router ---
+        
+        const SCREENS = {
+            LOADING: 'loading',
+            ONBOARDING_NAME: 'onboarding_name', 
+            WELCOME: 'welcome', 
+            MODE_SELECTION: 'mode_selection',
+            JARVIS_MODE: 'jarvis_mode',
+            CHAT_MODE: 'chat_mode',
+            SETTINGS: 'settings', 
+        };
+        
+        let currentScreen = SCREENS.LOADING;
+        let userId = 'local-storage-user'; 
+        let userName = null; 
+        let theme = THEMES.DARK; 
+        let accentColor = ACCENT_COLORS.CYAN; 
+        let isSidebarOpen = window.innerWidth >= 1024; // <-- FIX APPLIED HERE: Sidebar is open by default on desktop (>= 1024px)
+        let isJarvisListening = false;
+        let jarvisSubtitle = ""; 
+        let isHistoryOpen = true; 
+        let isProcessing = false; 
+        let isInputDirty = false; 
+        let isAnimatingResponse = false; 
+        let lastNonSettingsScreen = SCREENS.WELCOME;
+
+        // Load all chat sessions
+        let allSessions = [];
+        let currentSessionId = null;
+        
+        /** Sets the current screen and manages transitions */
+        const setScreen = (newScreen) => {
+            if (currentScreen === newScreen) return;
+
+            const previousScreen = currentScreen;
+            currentScreen = newScreen;
+
+            // Store last non-settings screen
+            if (newScreen !== SCREENS.SETTINGS && newScreen !== SCREENS.LOADING && newScreen !== SCREENS.ONBOARDING_NAME) {
+                 lastNonSettingsScreen = newScreen;
+                 try { localStorage.setItem(STORAGE_KEY_LAST_SCREEN, newScreen); } catch(e) { /* ignore */ }
+            }
+
+            // Cleanup when leaving speech-active screens
+            if (previousScreen === SCREENS.JARVIS_MODE || previousScreen === SCREENS.CHAT_MODE) {
+                stopSpeech();
+                toggleJarvisListening(false);
+            }
+            
+            updateScreen();
+        }; 
+        
+        /** Loads user data from local storage. */
+        const loadPersistentData = () => {
+            try {
+                userName = localStorage.getItem(STORAGE_KEY_USERNAME);
+                const storedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+                if (storedTheme) theme = storedTheme;
+                const storedAccent = localStorage.getItem(STORAGE_KEY_ACCENT);
+                if (storedAccent) accentColor = storedAccent;
+                const storedLastScreen = localStorage.getItem(STORAGE_KEY_LAST_SCREEN);
+                if (storedLastScreen) lastNonSettingsScreen = storedLastScreen;
+            } catch (e) {
+                console.error("Failed to load data from localStorage:", e);
+            }
+        };
+
+        /** Saves the user's name to local storage. */
+        const saveUserName = (name) => {
+            userName = name;
+            try {
+                if (name === null) {
+                    localStorage.removeItem(STORAGE_KEY_USERNAME);
+                } else {
+                    localStorage.setItem(STORAGE_KEY_USERNAME, name);
+                }
+            } catch (e) {
+                console.error("Failed to save data to localStorage:", e);
+            }
+        };
+        
+        /** Handles the submission of the user's name. */
+        const handleNameSubmission = () => {
+            const input = document.getElementById('name-input');
+            const name = input.value.trim();
+            if (name.length > 0) {
+                saveUserName(name);
+                handleModeSelection(SCREENS.WELCOME); 
+            } else {
+                alert("Please enter your name.");
+            }
+        };
+
+        // --- MODE SELECTION FIX ---
+
+        /** Handler for the Mode Selection buttons. */
+        const handleModeSelection = (mode) => {
+            stopSpeech(); 
+            
+            if (mode === SCREENS.CHAT_MODE) {
+                const currentSession = getCurrentSession();
+                if (!currentSession || currentSession.mode !== 'chat') {
+                    startNewSession('chat');
+                }
+                setScreen(SCREENS.CHAT_MODE);
+            } else if (mode === SCREENS.JARVIS_MODE) {
+                const currentSession = getCurrentSession();
+                 if (!currentSession || currentSession.mode !== 'jarvis') {
+                    startNewSession('jarvis');
+                }
+                setScreen(SCREENS.JARVIS_MODE);
+                // Ensure TTS is loaded before starting listen
+                if (ttsVoicesLoaded) {
+                    setTimeout(() => toggleJarvisListening(true), 500); 
+                }
+            } else if (mode === SCREENS.MODE_SELECTION) {
+                setScreen(SCREENS.MODE_SELECTION);
+            } else if (mode === SCREENS.WELCOME) {
+                setScreen(SCREENS.WELCOME);
+            }
+            toggleSidebar(false); 
+        };
+        
+        // --- THEME MANAGEMENT ---
+        const applyTheme = () => {
+            const body = document.body;
+            body.classList.remove('bg-black', 'theme-liquid-glass'); 
+
+            document.documentElement.style.setProperty('--accent-color', accentColor);
+
+            if (theme === THEMES.GLASSMORPHISM) {
+                body.classList.add('theme-liquid-glass'); 
+                document.documentElement.style.setProperty('--glass-bg', `rgba(${accentColor}, 0.08)`);
+                document.documentElement.style.setProperty('--glass-border', `rgba(${accentColor}, 0.4)`);
+            } else {
+                body.classList.add('bg-black');
+                document.documentElement.style.setProperty('--glass-bg', 'var(--glass-bg-default)');
+                document.documentElement.style.setProperty('--glass-border', 'var(--glass-border-default)');
+            }
+        };
+
+        const setTheme = (newTheme) => {
+            theme = newTheme;
+            try {
+                localStorage.setItem(STORAGE_KEY_THEME, newTheme);
+            } catch (e) { /* ignore */ }
+            applyTheme();
+            updateScreen(); 
+        };
+
+        const setAccentColor = (newColor) => {
+            accentColor = newColor;
+            try {
+                localStorage.setItem(STORAGE_KEY_ACCENT, newColor);
+            } catch (e) { /* ignore */ }
+            applyTheme();
+            updateScreen(); 
+        };
+        // --- END THEME MANAGEMENT ---
+        
+        // --- NEW: ANDROID COMMAND HANDLING ---
+        /** Opens an Android App via Intent URI in a web browser, compatible with Android. */
+        const handleAndroidAppCommand = (appName, command) => {
+            let uri = '';
+            appName = appName ? appName.toLowerCase() : 'unknown';
+            command = command ? command.toLowerCase() : '';
+            
+            // Simple mapping for common app commands in an Android browser
+            if (appName.includes('calculator')) {
+                // Calculator (using a common package name)
+                uri = 'intent://#Intent;package=com.android.calculator2;end'; 
+            } else if (appName.includes('weather')) {
+                 // Weather app (highly variable, using a general search as fallback)
+                uri = `intent:q=${encodeURIComponent('weather')}/#Intent;action=android.intent.action.WEB_SEARCH;end`; 
+            } else if (appName.includes('call') || appName.includes('dialer')) {
+                 // Dialer with extracted number (using tel: scheme)
+                const number = command.match(/\d+/g)?.join('');
+                if (number) uri = `tel:${number}`;
+            } else if (appName.includes('settings')) {
+                 // Android Settings
+                 uri = 'intent:#Intent;action=android.settings.SETTINGS;end';
+            } else if (appName.includes('youtube')) {
+                 // YouTube with search (example)
+                const query = command.replace(/open youtube to search/i, '').trim() || 'trending videos';
+                uri = `intent:q=${encodeURIComponent(query)}/#Intent;scheme=vnd.youtube;action=android.intent.action.SEARCH;end`;
+            } else {
+                console.warn(`No specific URI mapping for app: ${appName}`);
+                alert(`Foxy simulated command execution for: ${appName} - ${command}`);
+                return;
+            }
+
+            console.log(`Attempting to execute URI: ${uri}`);
+            animateSubtitle(`Attempting to launch ${appName}...`);
+            
+            // Execute the intent URI via location change
+            setTimeout(() => {
+                 window.location.href = uri;
+            }, 100);
+        };
+        // --- END ANDROID COMMAND HANDLING ---
+
+
+        // --- SECURE AI API CALL FUNCTION ---
+        
+        const NETLIFY_AI_PROXY_URL = '/.netlify/functions/foxy-ai-proxy'; 
+
+        /** Fetches AI response from the secure Netlify Function proxy. */
+        const fetchAIResponse = async (sessionId, userMessage, isFirstMessage = false, mode = 'chat', maxRetries = 3) => {
+            
+            const endpoint = NETLIFY_AI_PROXY_URL; 
+            const currentSession = allSessions.find(s => s.id === sessionId);
+            
+            // 1. Build cleaned history
+            // Filter out transient messages (like 'Foxy is thinking...') and map to the required API format.
+            const cleanedHistory = currentSession.messages
+                .filter(m => !m.isLoading && m.text && m.text.length > 0) 
+                .slice(-20) // Keep the last 20 messages for context (Enables persistent memory)
+                .map(m => ({ 
+                    role: m.sender === 'foxy' ? 'assistant' : 'user', 
+                    // Replace placeholder in history content for better model consistency
+                    content: m.text.replace(/\[userName\]/g, userName || 'Guest') 
+                }));
+                
+            // 2. Build system instruction
+            let systemInstructionContent = `You are Foxy AI Assistant. The user's name is ${userName || 'Guest'}. When you need to refer to the user by name in your response, use the placeholder **[userName]**. Keep your responses concise and helpful. If the user asks about who created you, respond with: "I was created by **Nomix**, a dedicated developer team. The CEO of Nomix is **Mohammed Musthaq**."`;
+            
+            if (mode === SCREENS.JARVIS_MODE) {
+                systemInstructionContent += `\n\nCRITICAL: You are in Jarvis Command mode. **All your responses MUST be valid JSON objects** with the following structure: \`{"tts_response": "Your spoken response here (max 50 words).", "display_text": "Formatted text for the chat history (markdown is allowed).", "command": "optional_command_identifier", "app_name": "App name here"}\`. Only return the raw JSON object, no markdown or extra text outside the JSON.`;
+            }
+
+            const systemInstruction = {
+                role: 'system',
+                content: systemInstructionContent
+            };
+
+            // 3. Add system instruction to the beginning of the history
+            cleanedHistory.unshift(systemInstruction);
+
+            const payload = {
+                session_id: sessionId,
+                query: userMessage, 
+                is_first_message: isFirstMessage, 
+                mode: mode, 
+                history: cleanedHistory, // Use the context-rich, cleaned history
+                user_name: userName || 'Guest'
+            };
+
+            const baseDelay = 700; 
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (resp.status === 429 || (resp.status >= 500 && resp.status < 600)) {
+                        const retryAfter = resp.headers.get('Retry-After');
+                        const wait = retryAfter ? parseFloat(retryAfter) * 1000 : baseDelay * Math.pow(2, attempt);
+                        if (attempt < maxRetries) {
+                            await new Promise(r => setTimeout(r, wait + Math.random() * 300));
+                            continue;
+                        } else {
+                            return { text: `Foxy is busy (server returned ${resp.status}). Please wait a moment and try again.`, isCommand: false };
+                        }
+                    }
+
+                    if (!resp.ok) {
+                        let errorText = `HTTP error ${resp.status}`;
+                        try {
+                            const errorData = await resp.json();
+                            errorText = errorData.error || errorText;
+                        } catch (e) {
+                            errorText = await resp.text().catch(() => errorText);
+                        }
+                        return { text: `Server error: ${errorText}`, isCommand: false };
+                    }
+
+                    const data = await resp.json();
+                    return {
+                        text: data.text,
+                        isCommand: data.is_command, 
+                        generatedTitle: data.generated_title || null, 
+                        command: data.command || null, 
+                        app_name: data.app_name || null, 
+                        greeting: data.greeting || null 
+                    };
+
+                } catch (err) {
+                    console.error('API call failed:', err);
+                    if (attempt < maxRetries) {
+                        const wait = baseDelay * Math.pow(2, attempt);
+                        await new Promise(r => setTimeout(r, wait + Math.random() * 200));
+                        continue;
+                    }
+                    return { text: `Foxy is currently unable to reach the secure function. Error: ${err.message || err}. Please check the Netlify deployment.`, isCommand: false };
+                }
+            }
+
+            return { text: 'Unexpected error calling backend.', isCommand: false };
+        };
+        
+        // --- Session Management & Persistence (Local Storage) Functions ---
+
+        /** Loads all chat sessions from local storage. */
+        function loadAllSessions() {
+            try {
+                const sessionsJson = localStorage.getItem(STORAGE_KEY_CHATHISTORY);
+                if (sessionsJson) {
+                    const loadedSessions = JSON.parse(sessionsJson);
+                    // Ensure modes are set for separation
+                    return loadedSessions.map(s => ({ ...s, mode: s.mode || 'chat' })).filter(s => s.messages.length > 0);
+                }
+            } catch (error) {
+                console.error("Error loading all sessions from local storage. Data may be corrupted. Resetting history.", error);
+                try { localStorage.removeItem(STORAGE_KEY_CHATHISTORY); } catch(e) { /* ignore */ }
+                return [];
+            }
+            return [];
+        }
+
+        /** Saves the current array of sessions to local storage. */
+        function saveAllSessions() {
+            try {
+                localStorage.setItem(STORAGE_KEY_CHATHISTORY, JSON.stringify(allSessions));
+            } catch (error) {
+                console.error("Error saving all sessions to local storage:", error);
+            }
+        }
+
+        const getCurrentSession = () => allSessions.find(s => s.id === currentSessionId);
+
+        const getCurrentMessages = () => {
+            const session = getCurrentSession();
+            return session ? session.messages : [];
+        };
+
+        /** Starts a new chat session with a specified mode. */
+        const startNewSession = (mode = 'chat') => {
+            const newId = crypto.randomUUID();
+            const newSession = { 
+                id: newId, 
+                title: mode === 'jarvis' ? 'Jarvis Command' : 'New Chat', 
+                messages: [],
+                mode: mode,
+                timestamp: new Date().toISOString()
+            };
+            allSessions.unshift(newSession);
+            currentSessionId = newId;
+            saveAllSessions();
+            return newId;
+        };
+
+        /** Deletes a specific session. */
+        const deleteSession = (sessionId) => {
+            const index = allSessions.findIndex(s => s.id === sessionId);
+            if (index !== -1) {
+                allSessions.splice(index, 1);
+            }
+
+            if (sessionId === currentSessionId) {
+                if (allSessions.length > 0) {
+                    // Try to switch to the newest session possible
+                    currentSessionId = allSessions[0].id;
+                    updateScreen(); // Must update after switching session
+                } else {
+                    // If no sessions are left, start a new default one
+                    startNewSession('chat');
+                    updateScreen(); // Must update after full reset
+                }
+            }
+            saveAllSessions();
+            renderSessionHistory(); // Granular update for sidebar
+        };
+
+        /** Deletes all chat sessions. */
+        const deleteAllSessions = () => {
+            allSessions = [];
+            startNewSession('chat'); // Start a fresh session
+            updateScreen();
+        };
+
+        /** Updates the title of the current session if a generated title is available. */
+        const updateSessionTitle = (sessionId, generatedTitle, mode) => {
+            const session = allSessions.find(s => s.id === sessionId);
+            if (session && generatedTitle) {
+                // Only update if the title is the default 'New Chat' or 'Jarvis Command'
+                if (session.title === "New Chat" || session.title === "Jarvis Command" || session.title.startsWith("Jarvis Command")) {
+                    session.title = generatedTitle;
+                    saveAllSessions();
+                    renderSessionHistory(); // Update the sidebar
+                }
+            }
+        };
+
+        /** Adds a message to the current session's history. */
+        const addMessageToHistory = (sender, text, isCommand = false, embedHtml = null, isLoading = false, commandData = {}) => {
+            const currentSession = getCurrentSession();
+            if (!currentSession) return;
+
+            // Remove previous loading message if it exists
+            currentSession.messages = currentSession.messages.filter(msg => !msg.isLoading);
+
+            const messageId = crypto.randomUUID(); // Give every message a unique ID
+            const message = { 
+                sender, 
+                text, 
+                isCommand, 
+                embedHtml, 
+                timestamp: new Date().toISOString(), 
+                mode: currentSession.mode,
+                messageId: messageId,
+                isLoading: isLoading, // Mark as loading
+                commandData: commandData // Store command details
+            };
+            currentSession.messages.push(message);
+            saveAllSessions();
+            return messageId; // Return ID for granular DOM manipulation
+        };
+
+        /** Switches the current chat session. */
+        const switchSession = (sessionId) => {
+            stopSpeech();
+            currentSessionId = sessionId;
+            saveAllSessions();
+            toggleSidebar(false);
+            const session = getCurrentSession();
+            if (session) {
+                if (session.mode === 'jarvis') setScreen(SCREENS.JARVIS_MODE);
+                else setScreen(SCREENS.CHAT_MODE);
+            }
+        };
+
+        // --- UI UTILITY FUNCTIONS ---
+
+        /** Scrolls a container to the bottom. */
+        const scrollToBottom = (elementId) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                // Use setTimeout to ensure DOM updates are complete
+                setTimeout(() => {
+                    element.scrollTop = element.scrollHeight;
+                }, 100); 
+            }
+        };
+        
+        /** Toggles the visibility of the history list in the sidebar. */
+        const updateHistoryVisibility = () => {
+            const container = document.getElementById('session-history-container');
+            const icon = document.getElementById('toggle-history-icon');
+            if (!container || !icon) return;
+
+            if (isHistoryOpen) {
+                // Set max-height large enough to contain content, for smooth transition
+                container.style.maxHeight = container.scrollHeight + 50 + "px"; 
+                container.classList.remove('opacity-0');
+                icon.classList.remove('rotate-180');
+            } else {
+                container.style.maxHeight = '0';
+                container.classList.add('opacity-0');
+                icon.classList.add('rotate-180');
+            }
+        };
+
+        /** Toggles the history open/close state. */
+        const toggleHistory = (forceState = null) => {
+            isHistoryOpen = forceState !== null ? forceState : !isHistoryOpen;
+            updateHistoryVisibility();
+        };
+
+        /** Toggles the sidebar visibility (smooth transition). */
+        const toggleSidebar = (forceState = null) => {
+            isSidebarOpen = forceState !== null ? forceState : !isSidebarOpen;
+            
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content-area');
+            let backdrop = document.getElementById('sidebar-backdrop');
+            const appRoot = document.getElementById('app-root');
+
+            if (sidebar) {
+                // Use transform on all screens for the sidebar
+                sidebar.classList.toggle('translate-x-0', isSidebarOpen);
+                sidebar.classList.toggle('-translate-x-full', !isSidebarOpen);
+            }
+
+            if (mainContent) {
+                // Use margin-left shift on desktop only
+                mainContent.classList.toggle('lg:ml-72', isSidebarOpen);
+            }
+
+            // Manage backdrop dynamically without full screen update
+            if (isSidebarOpen) {
+                if (!backdrop) {
+                    // Re-render only the backdrop
+                    backdrop = document.createElement('div');
+                    backdrop.id = 'sidebar-backdrop';
+                    backdrop.className = 'fixed inset-0 bg-black/50 z-40 lg:hidden animate-fadeIn';
+                    backdrop.onclick = () => toggleSidebar(false);
+                    appRoot.appendChild(backdrop);
+                }
+            } else {
+                if (backdrop) {
+                    // Remove the backdrop
+                    backdrop.remove();
+                }
+            }
+
+            // No call to updateScreen() here, which prevents the UI refresh flicker.
+        };
+
+        /** Function to manage the state of the input and send button. */
+        const setUIProcessingState = (isNowProcessing) => {
+            isProcessing = isNowProcessing;
+            isAnimatingResponse = isNowProcessing; // Block input while response is animating/streaming
+
+            // In chat mode, update input
+            const input = document.getElementById('chat-input');
+            if (input) {
+                input.disabled = isNowProcessing;
+                if (isNowProcessing) {
+                    input.placeholder = "Foxy is thinking...";
+                } else {
+                    input.placeholder = "Ask Foxy anything...";
+                }
+            }
+
+            // In chat mode, update send button
+            const sendButton = document.getElementById('chat-send-button');
+            if (sendButton) {
+                sendButton.disabled = isNowProcessing;
+                if (isNowProcessing) {
+                    sendButton.innerHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                    sendButton.classList.remove('send-button-active');
+                } else {
+                    updateInputActiveState(); // Re-evaluate active state based on input
+                    sendButton.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+                }
+            }
+
+            // In jarvis mode, update orb
+            updateOrbVisuals(); 
+        };
+
+        /** Updates the visual state of the chat input/send button. */
+        const updateInputActiveState = () => {
+            const input = document.getElementById('chat-input');
+            const sendButton = document.getElementById('chat-send-button');
+            if (!input || !sendButton || isProcessing) return;
+
+            isInputDirty = input.value.trim().length > 0;
+
+            if (isInputDirty) {
+                sendButton.classList.add('send-button-active');
+            } else {
+                sendButton.classList.remove('send-button-active');
+            }
+            sendButton.disabled = !isInputDirty;
+        };
+
+        /** Handles keyboard events on the chat input. */
+        const handleInputKey = (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent new line
+                if (isInputDirty && !isProcessing) {
+                    sendMessage();
+                }
+            }
+            // Debounce or just update state immediately
+            updateInputActiveState(); 
+        };
+
+
+        // --- MARKDOWN AND RENDERING ---
+        
+        /** Simple Markdown to HTML conversion. */
+        const markdownToHtml = (markdown) => {
+            let html = markdown || '';
+
+            // Handle the custom [userName] placeholder
+            html = html.replace(/\[userName\]/g, `<strong class="text-cyan-400">${userName || 'Guest'}</strong>`);
+            
+            // Headings
+            html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-3 mb-2 text-white">$1</h2>')
+                       .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-2 mb-2 text-gray-200">$1</h3>')
+            
+            // Styling
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                       .replace(/__(.*?)__/g, '<u>$1</u>') // Underline/Bold (kept bold for consistency in general markdown)
+                       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+                       .replace(/`(.*?)`/g, '<code class="bg-gray-700/50 p-1 rounded text-pink-300">$1</code>') // Inline Code
+
+            // Lists (Simple markdown support for * or -)
+            html = html.replace(/(\r\n|\r|\n)(?:\*|-)\s+(.*)/g, (match, nl, item) => `${nl}<li>${item}</li>`);
+            
+            // Simple approach: look for block of <li> items and wrap them (requires a bit more logic or reliance on innerHTML parsing later).
+            // For now, simple list item tags are OK.
+
+            // Code Blocks (```)
+            html = html.replace(/```(.*?)\n([\s\S]*?)```/g, (match, language, code) => {
+                const lang = language.trim().toLowerCase() || 'text';
+                const codeHtml = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                return `<pre class="text-sm overflow-x-auto"><code class="language-${lang}">${codeHtml}</code></pre>`;
+            });
+
+            // Convert remaining double newlines to paragraphs/breaks
+            html = `<p>${html.split(/(\r\n|\r|\n){2,}/g).filter(s => s.trim().length > 0).join('</p><p>')}</p>`;
+            
+            // Remove empty paragraph tags that might have been created
+            html = html.replace(/<p><\/p>/g, '');
+            
+            return html;
+        };
+        
+        /** Generates the HTML for a single message. */
+        const renderMessage = (message) => {
+            const container = document.createElement('div');
+            container.id = `message-${message.messageId}`;
+            container.className = message.sender === 'user' ? 'user-message-container' : 'foxy-message-container';
+
+            if (message.sender === 'foxy') {
+                container.innerHTML = `
+                    <div class="foxy-message-content flex items-start space-x-3">
+                        ${message.isLoading ? `
+                            <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0 animate-pulse"/>
+                            <div class="text-lg text-gray-400">Foxy is thinking...</div>
+                        ` : `
+                            <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0"/>
+                            <div class="foxy-response-target text-lg text-gray-200">
+                                ${message.embedHtml || markdownToHtml(message.text)}
+                            </div>
+                        `}
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="user-message-content">
+                        <p class="text-white text-lg">${message.text}</p>
+                    </div>
+                `;
+            }
+            return container;
+        };
+
+        /** Custom embedded HTML for System Command messages in Jarvis mode. (UPDATED to include execution button) */
+        const renderCommandEmbed = (appName, command) => {
+            return `
+                 <div class="flex flex-col space-y-3 p-4 rounded-xl bg-gray-700 border border-gray-600 shadow-md">
+                      <div class="flex items-start space-x-3">
+                        <svg class="w-6 h-6 text-red-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <div>
+                           <p class="font-semibold text-white">System Command Issued</p>
+                           <p class="text-sm text-gray-300">App: <strong>${appName}</strong></p>
+                           <p class="text-sm text-gray-300">Action: <code>${command}</code></p>
+                        </div>
+                      </div>
+                      <button onclick="handleAndroidAppCommand('${appName}', '${command.replace(/'/g, "\\'")}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm">
+                          Execute Command (Android)
+                      </button>
+                 </div>
+            `;
+        };
+
+
+        /** Renders all messages for the current session. */
+        const renderChatMessages = () => {
+            const messagesArea = document.getElementById('chat-messages-area');
+            if (!messagesArea) return;
+
+            // Clear existing messages
+            messagesArea.innerHTML = '';
+            
+            const messages = getCurrentMessages();
+
+            messages.forEach(message => {
+                const messageElement = renderMessage(message);
+                messagesArea.appendChild(messageElement);
+            });
+
+            // CRITICAL FIX: SCROLL TO BOTTOM AFTER INITIAL RENDER
+            setTimeout(() => scrollToBottom('chat-messages-area'), 0);
+        };
+
+        /** Sends the user message to the AI proxy. (UPDATED) */
+        const sendMessage = async (inputQuery = null) => {
+            if (isProcessing) return;
+
+            const input = document.getElementById('chat-input');
+            const query = inputQuery || (input ? input.value.trim() : '');
+            if (!query) return;
+
+            setUIProcessingState(true);
+
+            const isFirstMessage = getCurrentMessages().filter(m => !m.isLoading).length === 0;
+
+            if (input) {
+                input.value = '';
+                isInputDirty = false;
+                updateInputActiveState();
+            }
+
+            // 1. Add User Message
+            addMessageToHistory('user', query);
+            renderChatMessages();
+            scrollToBottom('chat-messages-area'); // **FIX: Scroll to user message**
+
+            // 2. Add Loading Message
+            const loadingMessageId = addMessageToHistory('foxy', 'Foxy is thinking...', false, null, true);
+            renderChatMessages();
+            scrollToBottom('chat-messages-area'); // Scroll to loading message
+
+            // 3. Fetch Response
+            const response = await fetchAIResponse(
+                currentSessionId,
+                query,
+                isFirstMessage,
+                getCurrentSession().mode
+            );
+
+            // 4. Handle Response
+            handleAIResponse(query, loadingMessageId, response);
+        };
+
+        /** Handles the final AI response object. (UPDATED) */
+        const handleAIResponse = (userQuery, loadingMessageId, response) => {
+            let displayText = response.text || 'An unexpected empty response was received.';
+            let ttsText = response.greeting || displayText;
+            let commandData = {}; // Stores app_name and command
+            let embedHtml = null;
+
+            // 1. Remove Loading Message (find and remove by ID)
+            const currentSession = getCurrentSession();
+            if (currentSession) {
+                currentSession.messages = currentSession.messages.filter(msg => msg.messageId !== loadingMessageId);
+            }
+
+            // 2. Update Session Title if needed
+            if (response.generatedTitle) {
+                 updateSessionTitle(currentSessionId, response.generatedTitle, currentSession.mode);
+            }
+
+            // 3. Handle Jarvis Mode Command Response
+            if (currentSession.mode === SCREENS.JARVIS_MODE && response.isCommand) {
+                try {
+                    const commandResponse = JSON.parse(response.text);
+                    ttsText = commandResponse.tts_response || displayText; 
+                    displayText = commandResponse.display_text || displayText; 
+                    commandData.command = commandResponse.command || response.command || userQuery;
+                    commandData.appName = commandResponse.app_name || response.app_name || 'System';
+
+                    // Insert the custom system command message
+                    embedHtml = renderCommandEmbed(commandData.appName, commandData.command); 
+                    
+                } catch (e) {
+                    console.error("Jarvis JSON parse error, falling back to raw text:", e);
+                    ttsText = displayText; 
+                    embedHtml = null;
+                }
+            }
+
+
+            // 4. Add Final Foxy Message
+            const finalMessageId = addMessageToHistory('foxy', displayText, response.isCommand, embedHtml, false, commandData);
+            
+            // 5. Update UI (re-render or animate/scroll)
+            if (currentSession.mode === SCREENS.CHAT_MODE) {
+                renderChatMessages();
+                scrollToBottom('chat-messages-area'); 
+            } else if (currentSession.mode === SCREENS.JARVIS_MODE) {
+                // For Jarvis, scroll down and start speaking
+                renderChatMessages();
+                scrollToBottom('chat-messages-area'); 
+                
+                // Start the TTS (Jarvis Mode specific)
+                if (ttsText) {
+                    setUIProcessingState(true); // Re-lock input while speaking
+                    speak(ttsText);
+                }
+            } else {
+                 renderChatMessages();
+                 scrollToBottom('chat-messages-area'); // **FIX: Scroll to Foxy message**
+            }
+
+            // 6. Final State Update
+            setUIProcessingState(false);
+            if (currentScreen === SCREENS.CHAT_MODE) {
+                const input = document.getElementById('chat-input');
+                if (input) input.focus();
+            }
+        };
+
+        // --- RENDERING FUNCTIONS (JSX-like HTML generation) ---
+
+        /** Generates the HTML for the Session History sidebar. */
+        const renderSessionHistory = () => {
+            const historyList = document.getElementById('session-history-list');
+            const jarvisCount = allSessions.filter(s => s.mode === 'jarvis').length;
+            const chatCount = allSessions.filter(s => s.mode === 'chat').length;
+            if (!historyList) return;
+
+            historyList.innerHTML = '';
+
+            let lastMode = null;
+            // Sort: Jarvis sessions first, then Chat sessions, both newest first
+            const sortedSessions = allSessions.sort((a, b) => {
+                if (a.mode === 'jarvis' && b.mode === 'chat') return -1;
+                if (a.mode === 'chat' && b.mode === 'jarvis') return 1;
+                
+                return new Date(b.messages[0]?.timestamp || 0) - new Date(a.messages[0]?.timestamp || 0);
+            });
+
+
+            sortedSessions.forEach(session => {
+                // Add separators if mode changes
+                if (session.mode !== lastMode) {
+                    const separator = document.createElement('li');
+                    separator.className = 'text-xs font-semibold text-gray-500 uppercase mt-4 mb-2 px-4';
+                    separator.textContent = session.mode === 'jarvis' ? `Jarvis Mode (${jarvisCount})` : `Chat Mode (${chatCount})`;
+                    historyList.appendChild(separator);
+                    lastMode = session.mode;
+                }
+
+                const listItem = document.createElement('li');
+                listItem.className = `group flex items-center justify-between p-3 rounded-xl cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out ${
+                    session.id === currentSessionId ? 'bg-cyan-700/50 text-white shadow-xl' : 'text-gray-300 hover:bg-gray-800/70'
+                }`;
+                listItem.onclick = () => switchSession(session.id);
+                listItem.innerHTML = `
+                    <div class="flex items-center space-x-2 w-10/12 truncate">
+                        ${session.mode === 'jarvis' ? 
+                           `<svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>` : 
+                           `<svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`
+                        }
+                        <span title="${session.title}" class="truncate">${session.title}</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteSession('${session.id}')" 
+                            class="opacity-0 group-hover:opacity-100 p-1 rounded-full text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                `;
+                historyList.appendChild(listItem);
+            });
+
+            // Ensure the history list container visibility is updated 
+            updateHistoryVisibility();
+        };
+
+
+        /** Generates the HTML for the sidebar. */
+        const renderSidebar = () => {
+            return `
+                <div id="sidebar" class="fixed z-50 lg:relative lg:translate-x-0 w-72 h-full bg-gray-900 border-r border-gray-800 shadow-xl flex flex-col transition-transform duration-300 ease-snappy ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
+                    <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <img src="foxy.png" alt="Foxy Logo" class="w-8 h-8 rounded-full flex-shrink-0 mr-2"/>
+                            <span class="text-xl font-bold text-cyan-400 mr-2">Foxy AI</span>
+                            <span class="text-xs px-2 py-0.5 bg-gray-700 rounded-full text-green-400">Nomix Edition</span>
+                        </div>
+                        <button onclick="toggleSidebar(false)" class="p-2 rounded-full lg:hidden hover:bg-gray-800 text-gray-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="p-4">
+                        <button onclick="startNewSession(currentScreen === SCREENS.JARVIS_MODE ? SCREENS.JARVIS_MODE : SCREENS.CHAT_MODE); updateScreen();" class="w-full bg-cyan-600 hover:bg-cyan-700 text-black font-semibold py-2 px-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            New ${currentScreen === SCREENS.JARVIS_MODE ? 'Command' : 'Chat'}
+                        </button>
+                    </div>
+
+                    <div class="flex-grow overflow-y-auto px-4 pb-4">
+                        <div class="flex items-center justify-between mb-3 cursor-pointer text-gray-400 hover:text-white transition-colors" onclick="toggleHistory()">
+                             <h3 class="text-xs font-semibold uppercase">Session History</h3>
+                             <svg id="toggle-history-icon" class="w-4 h-4 transition-transform duration-300 ${isHistoryOpen ? '' : 'rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        
+                        <ul id="session-history-container" class="space-y-1 overflow-hidden transition-all duration-300 ease-snappy ${isHistoryOpen ? 'opacity-100' : 'opacity-0'}" style="max-height: ${isHistoryOpen ? '999px' : '0'}">
+                            <ul id="session-history-list" class="space-y-1">
+                                </ul>
+                        </ul>
+                    </div>
+
+                    <div class="p-4 border-t border-gray-800 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-sm font-bold text-black">${userName ? userName.charAt(0).toUpperCase() : 'G'}</div>
+                            <span class="text-sm font-semibold text-white">${userName || 'Guest'}</span>
+                        </div>
+                        <button onclick="setScreen(SCREENS.SETTINGS)" class="p-2 rounded-full text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37zM12 15a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+        
+        const renderLoadingScreen = () => {
+            return `
+                 <div class="flex items-center justify-center h-full w-full">
+                    <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="text-lg text-gray-400 ml-4">Initializing Foxy AI...</p>
+                 </div>
+            `;
+        };
+
+        const renderOnboardingNameScreen = () => {
+            return `
+                 <div class="flex items-center justify-center h-full w-full animate-fadeIn">
+                    <div class="glass-panel p-8 w-full max-w-md text-center">
+                        <h2 class="text-3xl font-extrabold text-white mb-2">Welcome to Foxy AI</h2>
+                        <p class="text-gray-400 mb-6">What should I call you?</p>
+                        <input id="name-input" type="text" placeholder="Enter your name" class="w-full p-3 mb-4 bg-gray-700/50 border border-cyan-700/50 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" onkeyup="if(event.key==='Enter')handleNameSubmission()" maxlength="50" />
+                        <button onclick="handleNameSubmission()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-black font-semibold py-3 rounded-lg shadow-xl transition-all duration-200">
+                            Let's Start
+                        </button>
+                    </div>
+                 </div>
+            `;
+        };
+
+        const renderWelcomeScreen = () => {
+             return `
+                 <div class="flex flex-col items-center justify-center h-full w-full animate-fadeIn">
+                    <div class="glass-panel p-10 w-full max-w-xl text-center">
+                        <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
+                        <h1 class="text-4xl font-extrabold text-white mb-4">Hello, ${userName}! 👋</h1>
+                        <p class="text-xl text-gray-400 mb-8">I am Foxy, your AI Assistant. How may I assist you today?</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button onclick="handleModeSelection(SCREENS.CHAT_MODE)" class="glass-panel p-6 text-left hover:border-cyan-500 border-2 border-transparent transition-all duration-200">
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-8 h-8 text-green-400 mr-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                                    <h2 class="text-2xl font-bold text-white">Chat Mode</h2>
+                                </div>
+                                <p class="text-gray-400 text-sm">Have a natural, continuous conversation with memory.</p>
+                            </button>
+                            <button onclick="handleModeSelection(SCREENS.JARVIS_MODE)" class="glass-panel p-6 text-left hover:border-red-500 border-2 border-transparent transition-all duration-200">
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-8 h-8 text-red-400 mr-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>
+                                    <h2 class="text-2xl font-bold text-white">Jarvis Mode</h2>
+                                </div>
+                                <p class="text-gray-400 text-sm">Issue short, specific commands for quick actions and TTS feedback.</p>
+                            </button>
+                        </div>
+
+                        <button onclick="setScreen(SCREENS.SETTINGS)" class="mt-8 text-sm font-semibold text-gray-500 hover:text-white transition-colors flex items-center mx-auto">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37zM12 15a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                            Settings
+                        </button>
+                    </div>
+                 </div>
+             `;
+        };
+
+        const renderChatModeScreen = () => {
+            const hasMessages = getCurrentMessages().filter(m => !m.isLoading).length > 0;
+            return `
+                ${renderSidebar()}
+                <div id="main-content-area" class="flex-grow flex flex-col h-full lg:ml-${isSidebarOpen ? '72' : '0'} transition-all duration-300">
+                    <div class="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0 bg-gray-900/90 backdrop-blur-sm">
+                        <button onclick="toggleSidebar()" class="p-2 rounded-full lg:hidden text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                        </button>
+                        <div class="text-lg font-bold text-white truncate max-w-[200px] sm:max-w-none">
+                            ${getCurrentSession()?.title || 'New Chat'}
+                        </div>
+                        <button onclick="handleModeSelection(SCREENS.MODE_SELECTION)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors">
+                            Switch Mode
+                        </button>
+                    </div>
+
+                    <div id="chat-messages-area" class="flex-grow overflow-y-auto pt-4 pb-20 scroll-smooth relative">
+                        ${!hasMessages ? `
+                            <div class="flex items-center justify-center h-full w-full text-center p-8 absolute inset-0">
+                                <div class="glass-panel p-8 max-w-lg">
+                                    <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
+                                    <h2 class="text-2xl font-bold mb-2">Start a new Chat</h2>
+                                    <p class="text-gray-400">Ask me anything, **${userName}**! I have full memory of this conversation.</p>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="fixed bottom-0 left-0 lg:left-72 right-0 p-4 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 shadow-2xl transition-all duration-300">
+                        <div class="max-w-4xl mx-auto flex items-end">
+                            <button id="stt-mic-button" onclick="toggleSTT()" class="p-3 mb-1 rounded-full text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Start Voice Input">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.93-3 7-5.3 7S6.7 14.93 6.7 11H5c0 4.19 3.33 7.6 7 8v3h2v-3c3.67-.4 7-3.81 7-8h-1.7z"/></svg>
+                            </button>
+
+                            <textarea id="chat-input" 
+                                class="flex-grow p-3 mx-2 bg-gray-800/70 border border-gray-700/50 rounded-xl text-white resize-none focus:ring-2 focus:ring-cyan-500 focus:outline-none placeholder:text-gray-500 transition-all duration-150 max-h-40" 
+                                placeholder="Ask Foxy anything..." 
+                                rows="1"
+                                oninput="this.style.height='auto'; this.style.height=(this.scrollHeight)+'px'; updateInputActiveState()"
+                                onkeydown="handleInputKey(event)"
+                            ></textarea>
+
+                            <button id="chat-send-button" onclick="sendMessage()" disabled 
+                                class="p-3 mb-1 rounded-full text-black bg-gray-700 font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Send Message">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderJarvisModeScreen = () => {
+            const hasMessages = getCurrentMessages().filter(m => !m.isLoading).length > 0;
+            return `
+                ${renderSidebar()}
+                <div id="main-content-area" class="flex-grow flex flex-col h-full lg:ml-${isSidebarOpen ? '72' : '0'} transition-all duration-300">
+                    <div class="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0 bg-gray-900/90 backdrop-blur-sm">
+                        <button onclick="toggleSidebar()" class="p-2 rounded-full lg:hidden text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                        </button>
+                        <div class="text-lg font-bold text-white truncate max-w-[200px] sm:max-w-none text-red-400">
+                            Jarvis Mode
+                        </div>
+                        <button onclick="handleModeSelection(SCREENS.MODE_SELECTION)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors">
+                            Switch Mode
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-start p-8 flex-shrink-0 bg-gray-900/80 border-b border-gray-800">
+                        <div id="jarvis-orb" onclick="toggleJarvisListening(!isSTTActive)" 
+                            class="w-32 h-32 rounded-full border-4 border-gray-600/50 flex items-center justify-center cursor-pointer transition-all duration-300 animate-orbPulse bg-gray-700/70">
+                            <div id="jarvis-icon" class="transition-colors duration-300">
+                                <svg class="w-16 h-16 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7V9h4V5l5 6-5 6z"/></svg>
+                            </div>
+                        </div>
+                        <p id="jarvis-title-status" class="mt-4 text-xl font-semibold text-white">Jarvis Mode: Ready</p>
+                        <p id="jarvis-subtitle" class="text-sm text-gray-400 h-6 overflow-hidden mt-1 transition-all duration-300">Tap the orb or speak a command.</p>
+                    </div>
+
+                    <div id="chat-messages-area" class="flex-grow overflow-y-auto scroll-smooth relative border-t border-gray-800">
+                        ${!hasMessages ? `
+                            <div class="flex items-center justify-center h-full w-full text-center p-8 absolute inset-0">
+                                <div class="glass-panel p-8 max-w-lg">
+                                    <img src="foxy.png" alt="Foxy Logo" class="w-16 h-16 rounded-full mx-auto mb-4"/>
+                                    <h2 class="text-2xl font-bold mb-2">Jarvis Command Mode</h2>
+                                    <p class="text-gray-400">Speak commands like: "**Open Calculator**" or "**Check Weather**".</p>
+                                    <p class="text-gray-400">Remember, I know you as **${userName}**.</p>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderSettingsScreen = () => {
+            const themes = Object.keys(THEMES);
+            const colors = Object.keys(ACCENT_COLORS);
+
+            return `
+                ${renderSidebar()}
+                <div id="main-content-area" class="flex-grow p-8 transition-all duration-300 overflow-y-auto lg:ml-${isSidebarOpen ? '72' : '0'}">
+                    <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
+                        <h1 class="text-3xl font-extrabold text-white">Settings</h1>
+                        <button onclick="handleModeSelection(lastNonSettingsScreen)" class="text-sm font-semibold text-cyan-400 hover:text-white transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                            Back to ${lastNonSettingsScreen === SCREENS.JARVIS_MODE ? 'Jarvis Mode' : (lastNonSettingsScreen === SCREENS.CHAT_MODE ? 'Chat Mode' : 'Welcome')}
+                        </button>
+                    </div>
+
+                    <div class="space-y-8 max-w-3xl mx-auto">
+                        
+                        <div class="glass-panel p-6">
+                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">1. Theme & Appearance</h2>
+
+                            <div class="mb-6">
+                                <h3 class="text-lg font-medium text-white mb-2">Select Theme:</h3>
+                                <div class="flex space-x-4">
+                                    ${themes.map(t => `
+                                        <button onclick="setTheme(THEMES.${t})" 
+                                                class="flex-1 p-3 rounded-lg font-semibold transition-all duration-200 ${
+                                                    theme === THEMES[t] 
+                                                        ? 'bg-cyan-600 text-black shadow-lg' 
+                                                        : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/70'
+                                                }">
+                                            ${t.charAt(0).toUpperCase() + t.slice(1)}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg font-medium text-white mb-2">Accent Color:</h3>
+                                <div class="grid grid-cols-5 gap-3">
+                                    ${colors.map(c => {
+                                        const colorValue = ACCENT_COLORS[c];
+                                        return `
+                                            <button onclick="setAccentColor(ACCENT_COLORS.${c})" 
+                                                    class="h-10 w-full rounded-full transition-all duration-200 border-2 ${
+                                                        accentColor === colorValue 
+                                                            ? 'border-white ring-4 ring-offset-2 ring-offset-gray-900' 
+                                                            : 'border-transparent hover:ring-2 hover:ring-offset-2 hover:ring-offset-gray-900'
+                                                    }" 
+                                                    style="background-color: rgba(${colorValue}, 0.8); ${
+                                                        accentColor === colorValue ? `box-shadow: 0 0 10px rgba(${colorValue}, 0.5); ring-color: rgba(${colorValue}, 0.9);` : `hover:ring-color: rgba(${colorValue}, 0.5);`
+                                                    }"
+                                                    title="${c.charAt(0).toUpperCase() + c.slice(1)}">
+                                            </button>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-6">
+                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">2. Voice Features</h2>
+                            <p class="text-gray-400 mb-4">Voice capabilities (TTS/STT) are automatically enabled if supported by your browser and permissions are granted.</p>
+                            <p class="text-sm text-gray-500">Status: ${hasSpeechAPI() ? '<span class="text-green-400">Supported</span>' : '<span class="text-red-400">Not Supported or Permissions Denied</span>'}</p>
+                        </div>
+
+                        <div class="glass-panel p-6">
+                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">3. Data Management</h2>
+                            <div class="flex justify-between items-center mb-4">
+                                <p class="text-gray-400">Clear all chat history sessions from local storage.</p>
+                                <button onclick="if(confirm('Are you sure you want to delete ALL chat sessions? This cannot be undone.')) deleteAllSessions()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200">
+                                    Clear History
+                                </button>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-gray-400">Change your saved username: <strong>${userName}</strong></p>
+                                <button onclick="saveUserName(null); setScreen(SCREENS.ONBOARDING_NAME);" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200">
+                                    Change Name
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-6">
+                            <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2 text-cyan-400">4. Credits</h2>
+                            <p class="text-gray-400 mb-2">Foxy AI Assistant - Nomix Edition was developed by **Nomix**.</p>
+                            <p class="text-gray-400 flex items-center">
+                                Follow for more updates:
+                                <a href="[https://www.youtube.com/@Nomixofficial0](https://www.youtube.com/@Nomixofficial0)" target="_blank" class="ml-2 text-red-500 hover:text-red-400 transition-colors flex items-center font-medium">
+                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.613-.243-11.417-.243-15.03 0C1.885 3.427 0 5.313 0 7.42v9.16c0 2.107 1.885 3.993 4.585 4.236 3.613.243 11.417.243 15.03 0 2.7-.243 4.585-2.129 4.585-4.236V7.42c0-2.107-1.885-3.993-4.585-4.236zM9.545 15.55L15.344 12 9.545 8.45v7.1z"/></svg>
+                                    @Nomixofficial0
+                                </a>
+                            </p>
+                        </div>
+                        </div>
+                </div>
+            `;
+        };
+
+        // --- Main Router and Utility Functions ---
+
+        /** The main function to update the DOM based on the current screen state. */
+        const updateScreen = () => {
+            const appRoot = document.getElementById('app-root');
+            if (!appRoot) return;
+
+            // Stop speech/listening before rendering a new view
+            stopSpeech();
+            toggleJarvisListening(false);
+            
+            let contentHTML = '';
+            let needsHistoryRender = false;
+            let needsPostRenderActions = true;
+
+            switch (currentScreen) {
+                case SCREENS.LOADING:
+                    contentHTML = renderLoadingScreen();
+                    needsPostRenderActions = false;
+                    break;
+                case SCREENS.ONBOARDING_NAME:
+                    contentHTML = renderOnboardingNameScreen();
+                    break;
+                case SCREENS.WELCOME:
+                    contentHTML = renderWelcomeScreen();
+                    break;
+                case SCREENS.MODE_SELECTION:
+                    // Mode selection is handled within renderWelcomeScreen
+                    contentHTML = renderWelcomeScreen(); 
+                    break;
+                case SCREENS.CHAT_MODE:
+                    contentHTML = renderChatModeScreen();
+                    needsHistoryRender = true;
+                    break;
+                case SCREENS.JARVIS_MODE:
+                    contentHTML = renderJarvisModeScreen();
+                    needsHistoryRender = true;
+                    break;
+                case SCREENS.SETTINGS:
+                    contentHTML = renderSettingsScreen();
+                    needsHistoryRender = true;
+                    break;
+                default:
+                    contentHTML = renderWelcomeScreen();
+                    break;
+            }
+
+            // Update the main content
+            appRoot.innerHTML = contentHTML;
+
+            // Perform post-render actions
+            if (needsHistoryRender) {
+                renderSessionHistory();
+                renderChatMessages(); // Render messages if in a chat mode
+            }
+
+            // Specific focus/state updates
+            if (needsPostRenderActions) {
+                updateOrbVisuals();
+                updateInputActiveState(); // Ensure the send button is disabled if input is empty
+                scrollToBottom('chat-messages-area');
+
+                // Re-wire event listeners for current mode
+                const nameInput = document.getElementById('name-input');
+                if (nameInput) nameInput.focus();
+
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) chatInput.focus();
+
+                const sendButton = document.getElementById('chat-send-button');
+                if (sendButton) {
+                     sendButton.onclick = () => sendMessage();
+                }
+            }
+        };
+
+        /** Function to animate the Jarvis subtitle. */
+        const animateSubtitle = (text) => {
+            const subtitle = document.getElementById('jarvis-subtitle');
+            if (subtitle) {
+                subtitle.style.animation = 'none'; // Reset animation
+                subtitle.offsetHeight; // Trigger reflow
+                subtitle.style.animation = ''; // Re-enable animation for next update
+                subtitle.style.animation = 'subtitleEffect 0.5s var(--ease-snappy) forwards';
+                subtitle.textContent = text;
+            }
+        };
+
+        const loadSessions = () => {
+            allSessions = loadAllSessions();
+            if (allSessions.length === 0) {
+                startNewSession('chat');
+            } else {
+                // Try to restore the last active session, otherwise default to the newest one
+                const lastSessionId = localStorage.getItem('foxy_current_session_id');
+                const foundLast = allSessions.find(s => s.id === lastSessionId);
+                
+                if (foundLast) {
+                    currentSessionId = foundLast.id;
+                } else {
+                    currentSessionId = allSessions[0].id;
+                }
+            }
+        };
+
+        /** Initializes the application state and renders the first screen. */
+        const initializeApp = () => {
+            loadPersistentData();
+            loadSessions();
+            initSpeechAPI(); 
+            applyTheme();
+
+            if (!userName) {
+                setScreen(SCREENS.ONBOARDING_NAME);
+            } else if (currentScreen === SCREENS.LOADING) {
+                 // Determine initial screen based on last non-settings screen
+                 if (lastNonSettingsScreen === SCREENS.JARVIS_MODE) {
+                     setScreen(SCREENS.JARVIS_MODE);
+                 } else if (lastNonSettingsScreen === SCREENS.CHAT_MODE) {
+                     setScreen(SCREENS.CHAT_MODE);
+                 } else {
+                     setScreen(SCREENS.WELCOME);
+                 }
+            } else {
+                updateScreen();
+            }
+        };
+        
+        // This ensures the DOM is ready before we start manipulating it
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
