@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Foxy AI Assistant - Nomix Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        glass: {
+                            bg: 'var(--glass-bg)',
+                            border: 'var(--glass-border)',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            600: '#0891b2',
+                            900: '#164e63',
+                        }
+                    },
+                    animation: {
+                        'orb-pulse': 'orbPulse 4s infinite ease-in-out',
+                        'listening-pulse': 'listeningPulse 2s infinite ease-in-out',
+                        'fade-in': 'fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-in': 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-scale': 'fadeAndScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        fadeAndScale: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(20px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        orbPulse: {
+                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 10px rgba(6, 182, 212, 0.4)' },
+                            '50%': { transform: 'scale(1.04)', boxShadow: '0 0 25px rgba(6, 182, 212, 0.7)' },
+                        },
+                        listeningPulse: {
+                            '0%, 100%': { transform: 'scale(1.02)', boxShadow: '0 0 10px #4ade80, 0 0 20px #4ade80', borderColor: '#4ade80' },
+                            '50%': { transform: 'scale(1.06)', boxShadow: '0 0 20px #4ade80, 0 0 36px #4ade80', borderColor: '#10b981' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --glass-bg-default: rgba(17,24,39,0.7); 
+            --glass-border-default: rgba(12, 74, 110, 0.3); 
+            --accent-color: 6, 182, 212; 
+            --liquid-overlay: rgba(6, 182, 212, 0.1); 
+            --glass-bg: var(--glass-bg-default);
+            --glass-border: var(--glass-border-default);
+        }
+
+        body {
+            background-color: black;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f1724; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 6px; }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
+            backdrop-filter: blur(14px) saturate(150%); 
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            border-radius: 16px;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(6, 182, 212, 0.1), 0 0 1px rgba(6, 182, 212, 0.5);
+        }
+
+        .theme-liquid-glass {
+            background: radial-gradient(circle at 10% 10%, var(--liquid-overlay) 0%, transparent 60%),
+                        radial-gradient(circle at 90% 90%, var(--liquid-overlay) 0%, transparent 60%),
+                        linear-gradient(135deg, #0a1122 0%, #00040f 100%);
+            background-size: 200% 200%;
+            animation: moveGradient 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        
+        /* Markdown Math Adjustments */
+        .katex-display { margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-markdown": "https://esm.sh/react-markdown@^9.0.1",
+    "remark-math": "https://esm.sh/remark-math@^6.0.0",
+    "rehype-katex": "https://esm.sh/rehype-katex@^7.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
+    "react/": "https://esm.sh/react@^18.2.0/",
+    "react": "https://esm.sh/react@^18.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.294.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

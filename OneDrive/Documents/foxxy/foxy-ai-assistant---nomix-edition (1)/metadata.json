@@ -1,0 +1,7 @@
+{
+  "name": "Foxy AI Assistant - Nomix Edition",
+  "description": "A cross-platform desktop AI assistant featuring Chat and Jarvis Voice Command modes with a Liquid Glass UI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
