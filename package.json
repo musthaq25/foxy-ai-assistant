@@ -1,0 +1,12 @@
+{
+  "name": "foxy-ai-assistant",
+  "version": "1.0.0",
+  "description": "Dependencies for the Foxy AI Netlify Function.",
+  "main": "netlify-functions/foxy-ai-proxy.js",
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "groq-sdk": "*"
+  }
+}
