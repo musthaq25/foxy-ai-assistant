@@ -6,146 +6,157 @@
   <title>Payment Successful | DayStack</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     :root {
-      --bg: #0A0A0C;
-      --surface: #121216;
-      --border: rgba(255, 255, 255, 0.08);
-      --primary: #C5A059;
-      --primary-hover: #E2BC72;
+      --bg: #050508;
+      --surface: #0E0E14;
+      --border: rgba(16, 185, 129, 0.3);
+      --primary: #10B981;
+      --primary-hover: #34D399;
       --text: #F4F4F6;
       --text-muted: #9A9AA6;
-      --success: #10B981;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 24px;
       overflow-x: hidden;
+      position: relative;
     }
 
-    .glow {
+    .glow-emerald {
       position: absolute;
-      width: 340px;
-      height: 340px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 1;
+      filter: blur(50px);
     }
 
-    .checkout-card {
+    .success-card {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 440px;
-      background: var(--surface);
+      max-width: 450px;
+      background: rgba(14, 14, 20, 0.88);
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 36px 32px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      border-radius: 28px;
+      padding: 40px 32px 32px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(16, 185, 129, 0.15);
       text-align: center;
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .logo-container {
-      margin-bottom: 24px;
+    @keyframes cardSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .logo-img {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.03);
-      padding: 10px;
+    .icon-container {
+      width: 80px;
+      height: 80px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+      animation: pulseGlow 2s infinite ease-in-out;
     }
 
-    .success-icon {
-      font-size: 54px;
-      margin-bottom: 16px;
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(16, 185, 129, 0.5); }
     }
+
+    .icon-container svg { width: 40px; height: 40px; stroke: var(--primary); }
 
     h2 {
-      font-size: 1.6rem;
-      font-weight: 600;
+      font-size: 1.75rem;
+      font-weight: 800;
       margin-bottom: 8px;
-      letter-spacing: -0.02em;
-      color: var(--success);
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #FFFFFF 0%, #A7F3D0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 28px;
-      line-height: 1.5;
-    }
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
 
     .btn-action {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       width: 100%;
-      background: var(--primary);
-      color: #000;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
       border: none;
-      border-radius: 14px;
-      padding: 14px 24px;
+      border-radius: 16px;
+      padding: 16px 24px;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
       text-decoration: none;
-      transition: all 0.2s ease;
-      margin-top: 16px;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
     }
-
-    .btn-action:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(16, 185, 129, 0.45); }
   </style>
 </head>
 <body>
-  <div class="glow"></div>
-  <div class="checkout-card">
-    <div class="logo-container">
-      <img src="./logo.png" alt="DayStack Logo" class="logo-img" onerror="this.src='https://daystack-mu.vercel.app/logo.png'">
-    </div>
-    <div class="success-icon">✨ 🎉 ✨</div>
-    <h2>Payment Successful!</h2>
-    <p class="subtitle" id="status-text">Your DayStack Pro upgrade has been processed. Redirecting back to the app...</p>
+  <div class="glow-emerald"></div>
 
-    <div id="action-buttons">
-      <a href="daystack://payment-success" class="btn-action" id="btn-redirect">Open DayStack App</a>
+  <div class="success-card">
+    <div class="icon-container">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
     </div>
+
+    <h2>Payment Successful!</h2>
+    <p class="subtitle">Your DayStack Premium subscription is now unlocked. Returning you to the app...</p>
+
+    <a href="#" class="btn-action" id="btn-open-app">Open DayStack App</a>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session');
-    const successLink = sessionId ? `daystack://payment-success?session=${encodeURIComponent(sessionId)}` : 'daystack://payment-success';
-    
-    document.getElementById('btn-redirect').href = successLink;
+    const deepLink = `daystack://payment-success${sessionId ? '?session=' + encodeURIComponent(sessionId) : ''}`;
 
-    // Automatically trigger app deep link
-    window.location.href = successLink;
+    const btn = document.getElementById('btn-open-app');
+    btn.href = deepLink;
 
-    setTimeout(() => {
-      document.getElementById('status-text').textContent = "If the DayStack app did not open automatically, tap the button below to complete your upgrade.";
-    }, 2000);
+    // Trigger celebration confetti
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      setTimeout(() => {
+        confetti({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0, y: 0.8 } });
+        confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.8 } });
+      }, 300);
+    }
+
+    // Auto-launch deep link
+    setTimeout(() => { window.location.href = deepLink; }, 1000);
   </script>
 </body>
 </html>

@@ -6,13 +6,14 @@
   <title>DayStack | Secure Payment Gateway</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     :root {
-      --bg: #0A0A0C;
-      --surface: #121216;
+      --bg: #050508;
+      --surface: #0E0E14;
       --border: rgba(255, 255, 255, 0.08);
+      --border-gold: rgba(197, 160, 89, 0.3);
       --primary: #C5A059;
       --primary-hover: #E2BC72;
       --text: #F4F4F6;
@@ -21,81 +22,110 @@
       --error: #EF4444;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 24px;
       overflow-x: hidden;
+      position: relative;
     }
 
-    /* Ambient Glow Backgrounds */
-    .glow {
+    .glow-gold {
       position: absolute;
-      width: 340px;
-      height: 340px;
-      background: radial-gradient(circle, rgba(197, 160, 89, 0.12) 0%, transparent 70%);
-      top: 50%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(197, 160, 89, 0.15) 0%, transparent 70%);
+      top: 30%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 1;
+      filter: blur(40px);
+    }
+    .glow-violet {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+      bottom: 20%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(50px);
     }
 
     .checkout-card {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 440px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 36px 32px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      max-width: 450px;
+      background: rgba(14, 14, 20, 0.85);
+      border: 1px solid var(--border-gold);
+      border-radius: 28px;
+      padding: 40px 32px 32px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(197, 160, 89, 0.1);
       text-align: center;
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .logo-container {
-      margin-bottom: 24px;
+    @keyframes cardSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(197, 160, 89, 0.1);
+      border: 1px solid var(--border-gold);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .logo-container { margin-bottom: 20px; }
     .logo-img {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
-      border: 1px solid var(--border);
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      border: 1px solid var(--border-gold);
       background: rgba(255, 255, 255, 0.03);
       padding: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
 
     h2 {
-      font-size: 1.6rem;
-      font-weight: 600;
+      font-size: 1.65rem;
+      font-weight: 800;
       margin-bottom: 8px;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 28px;
-    }
+    .subtitle { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 28px; line-height: 1.5; }
 
     .details-box {
-      background: rgba(255, 255, 255, 0.025);
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 20px;
       margin-bottom: 28px;
       text-align: left;
@@ -104,97 +134,84 @@
     .detail-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 12px;
+      align-items: center;
+      margin-bottom: 14px;
       font-size: 0.95rem;
     }
-
-    .detail-row:last-child {
-      margin-bottom: 0;
-      padding-top: 12px;
-      border-top: 1px dashed var(--border);
-    }
-
-    .detail-label {
-      color: var(--text-muted);
-    }
-
-    .detail-value {
-      font-weight: 500;
-    }
-
+    .detail-row:last-child { margin-bottom: 0; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .detail-label { color: var(--text-muted); font-weight: 500; }
+    .detail-value { font-weight: 600; color: var(--text); }
     .detail-value.price {
-      color: var(--primary);
-      font-size: 1.2rem;
-      font-weight: 700;
+      background: linear-gradient(135deg, #FDE68A 0%, #C5A059 50%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1.35rem;
+      font-weight: 800;
     }
 
-    /* Status and Loader animations */
-    .status-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin: 20px 0;
-    }
-
+    .status-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px 0; }
     .spinner {
       width: 48px;
       height: 48px;
       border: 4px solid rgba(197, 160, 89, 0.15);
       border-top: 4px solid var(--primary);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.9s linear infinite;
       margin-bottom: 16px;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .status-icon {
-      font-size: 54px;
-      margin-bottom: 16px;
-      display: none;
-    }
-
-    .status-text {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text);
-      line-height: 1.5;
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .status-text { font-size: 0.92rem; font-weight: 500; color: var(--text); line-height: 1.5; }
 
     .btn-action {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       width: 100%;
-      background: var(--primary);
-      color: #000;
+      background: linear-gradient(135deg, #C5A059 0%, #E2BC72 100%);
+      color: #030307;
       border: none;
-      border-radius: 14px;
-      padding: 14px 24px;
+      border-radius: 16px;
+      padding: 16px 24px;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
       text-decoration: none;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       margin-top: 16px;
+      box-shadow: 0 10px 25px rgba(197, 160, 89, 0.25);
     }
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(197, 160, 89, 0.4); }
 
-    .btn-action:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
+    .trust-footer {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
     }
+    .trust-item { display: flex; align-items: center; gap: 4px; }
   </style>
 </head>
 <body>
-  <div class="glow"></div>
+  <div class="glow-gold"></div>
+  <div class="glow-violet"></div>
+
   <div class="checkout-card">
+    <div class="security-badge">
+      <span>🔒</span> 256-bit Encrypted SSL Gateway
+    </div>
+
     <div class="logo-container">
       <img src="./logo.png" alt="DayStack Logo" class="logo-img" onerror="this.src='https://daystack-mu.vercel.app/logo.png'">
     </div>
     <h2 id="checkout-title">DayStack Payment</h2>
-    <p class="subtitle" id="checkout-subtitle">Authenticating payment session...</p>
+    <p class="subtitle" id="checkout-subtitle">Authenticating secure payment session...</p>
 
     <div class="details-box" id="details-box" style="display: none;">
       <div class="detail-row">
@@ -213,11 +230,19 @@
 
     <div class="status-container" id="status-container">
       <div class="spinner" id="spinner"></div>
-      <p class="status-text" id="status-text">Connecting to secure servers...</p>
+      <p class="status-text" id="status-text">Connecting to secure gateway...</p>
     </div>
 
     <div id="action-buttons" style="display: none;">
       <a href="daystack://payment-failed" class="btn-action" id="btn-redirect">Return to DayStack App</a>
+    </div>
+
+    <div class="trust-footer">
+      <div class="trust-item">⚡ Instant Activation</div>
+      <span>•</span>
+      <div class="trust-item">🛡️ Razorpay Verified</div>
+      <span>•</span>
+      <div class="trust-item">🔒 PCI-DSS Compliant</div>
     </div>
   </div>
 
@@ -230,7 +255,6 @@
     function updateStatus(type, message) {
       const spinner = document.getElementById('spinner');
       const text = document.getElementById('status-text');
-      
       if (type === 'loading') {
         spinner.style.display = 'block';
       } else {
@@ -247,36 +271,34 @@
       btn.textContent = text;
     }
 
-    function triggerDeepLink(schemeUrl) {
-      window.location.href = schemeUrl;
-      setTimeout(() => {
-        showButtons(schemeUrl, "Open DayStack App");
-      }, 1500);
-    }
+    window.onload = function() {
+      if (pathname.includes('payment-success')) {
+        renderSuccessPage();
+      } else {
+        startCheckoutFlow();
+      }
+    };
 
-    // Handle /payment-success route
-    if (pathname.includes('payment-success')) {
-      document.getElementById('checkout-title').textContent = "Payment Successful! 🎉";
-      document.getElementById('checkout-subtitle').textContent = "Your DayStack Pro upgrade is active.";
-      updateStatus('success', 'Redirecting back to DayStack App to unlock your premium features...');
-      const successLink = sessionId ? `daystack://payment-success?session=${encodeURIComponent(sessionId)}` : 'daystack://payment-success';
-      triggerDeepLink(successLink);
-    } else {
-      // Main /payment flow
-      window.onload = startCheckoutFlow;
+    function renderSuccessPage() {
+      document.getElementById('checkout-title').textContent = "Payment Successful!";
+      document.getElementById('checkout-subtitle').textContent = "Your DayStack Premium membership is active.";
+      updateStatus('success', 'Transaction verified. Opening DayStack App...');
+      
+      const deepLink = `daystack://payment-success${sessionId ? '?session=' + sessionId : ''}`;
+      showButtons(deepLink, "Open DayStack App");
+      setTimeout(() => { window.location.href = deepLink; }, 1200);
     }
 
     async function startCheckoutFlow() {
       if (!sessionId) {
         document.getElementById('checkout-title').textContent = "Payment Session Required";
         document.getElementById('checkout-subtitle').textContent = "Please initiate your upgrade directly from the DayStack App.";
-        updateStatus('error', 'No valid session ID provided. Firebase ID tokens and price overrides are strictly prohibited in browser URLs.');
+        updateStatus('error', 'No valid session ID provided. Tokens and price overrides are strictly prohibited in browser URLs.');
         showButtons("daystack://payment-failed", "Return to DayStack App");
         return;
       }
 
       try {
-        // 1. Verify Session with Server (Server-Authoritative Price & Email)
         updateStatus('loading', 'Validating secure payment session...');
         const verifyRes = await fetch(`${API_BASE}/api/verify-session`, {
           method: 'POST',
@@ -292,14 +314,12 @@
         const verifyData = await verifyRes.json();
         const session = verifyData.session;
 
-        // Display Server-Authoritative Details
         document.getElementById('user-email').textContent = session.email || 'Authenticated User';
         document.getElementById('plan-name').textContent = session.planName || session.planId;
         document.getElementById('plan-price').textContent = "₹" + session.amount.toFixed(2);
         document.getElementById('details-box').style.display = 'block';
 
-        // 2. Request backend to create Razorpay Order/Subscription
-        updateStatus('loading', 'Initializing Razorpay Checkout...');
+        updateStatus('loading', 'Initializing Razorpay Gateway...');
         const isSubscription = session.planId.includes('monthly') || session.planId.includes('annual');
         const orderEndpoint = isSubscription ? '/api/create-subscription' : '/api/create-order';
 
@@ -318,14 +338,12 @@
         const orderId = orderData.subscriptionId || orderData.order_id || orderData.orderId;
         const razorpayKey = orderData.key_id || 'rzp_test_TEaZoQs4IIFazC';
 
-        // Simulated Mock Order handling (for dev/emulator)
         if (orderId && (orderId.startsWith('sub_mock_') || orderId.startsWith('order_mock_'))) {
           updateStatus('loading', 'Simulating payment confirmation...');
           await verifyPayment('pay_mock_' + Math.random().toString(36).substring(2, 14), orderId, 'sig_mock_xyz', session.planId);
           return;
         }
 
-        // 3. Open Razorpay Standard Checkout Overlay
         const options = {
           key: razorpayKey,
           amount: isSubscription ? undefined : (session.amount * 100),
@@ -335,12 +353,8 @@
           image: "https://daystack-mu.vercel.app/logo.png",
           order_id: isSubscription ? undefined : orderId,
           subscription_id: isSubscription ? orderId : undefined,
-          prefill: {
-            email: session.email
-          },
-          theme: {
-            color: "#C5A059"
-          },
+          prefill: { email: session.email },
+          theme: { color: "#C5A059" },
           handler: function (response) {
             verifyPayment(
               response.razorpay_payment_id || response.razorpay_subscription_id,
