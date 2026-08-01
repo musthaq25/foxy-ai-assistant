@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     { "source": "/payment", "destination": "/payment.html" },
     { "source": "/payment-success", "destination": "/payment-success.html" },
