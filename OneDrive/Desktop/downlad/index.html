@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
+  <title>DayStack — Premium Productivity Operating System & Focus Shield</title>
+  <meta name="description" content="DayStack is the ultimate personal IIT JEE study companion and distraction blocker app. Featuring AI companion Foxy, focus shield, live lobbies, and gamified XP rewards.">
+  <meta name="keywords" content="DayStack, DayStack App, DayStack Android, DayStack Productivity, Focus Shield, IIT Study Companion, Foxy AI, Productivity App">
+  <meta name="author" content="DayStack Team">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://daystack-mu.vercel.app/">
+  <link rel="icon" type="image/png" href="./logo.png">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://daystack-mu.vercel.app/">
+  <meta property="og:title" content="DayStack — Premium Productivity Operating System">
+  <meta property="og:description" content="Personal IIT study companion, AI companion, focus shield, and gamified productivity rewards.">
+  <meta property="og:image" content="https://daystack-mu.vercel.app/logo.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://daystack-mu.vercel.app/">
+  <meta name="twitter:title" content="DayStack — Premium Productivity Operating System">
+  <meta name="twitter:description" content="Personal IIT study companion, AI companion, focus shield, and gamified productivity rewards.">
+  <meta name="twitter:image" content="https://daystack-mu.vercel.app/logo.png">
+
+  <!-- Schema.org JSON-LD Structured Data for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DayStack",
+    "operatingSystem": "Android, Windows",
+    "applicationCategory": "ProductivityApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    },
+    "description": "DayStack is a premium productivity operating system featuring AI companion, focus shield, study lobbies, and gamified rewards.",
+    "url": "https://daystack-mu.vercel.app/"
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Ultra-Modern Color System & Variables */
+    :root[data-theme="dark"] {
+      --bg: #030307;
+      --surface: #090911;
+      --surface2: #111122;
+      --surface3: #181832;
+      --primary: #A78BFA;
+      --primary-rgb: 167, 139, 250;
+      --primary-hover: #C4B5FD;
+      --text: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --text-faint: #4B5563;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-hover: rgba(167, 139, 250, 0.3);
+      --success: #34D399;
+      --glow: rgba(167, 139, 250, 0.15);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface2: #F1F5F9;
+      --surface3: #E2E8F0;
+      --primary: #6D28D9;
+      --primary-rgb: 109, 40, 217;
+      --primary-hover: #5B21B6;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --text-faint: #94A3B8;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-hover: rgba(109, 40, 217, 0.25);
+      --success: #059669;
+      --glow: rgba(109, 40, 217, 0.06);
+    }
+
+    :root {
+      --radius-sm: 14px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --radius-xl: 36px;
+      --transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      overflow-x: hidden;
+      background-color: var(--bg);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Ambient Background Glows */
+    .glow-canvas {
+      position: absolute;
+      width: clamp(300px, 50vw, 600px);
+      height: clamp(300px, 50vw, 600px);
+      background: radial-gradient(circle, rgba(var(--primary-rgb), 0.18) 0%, rgba(0,0,0,0) 70%);
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: 0;
+      will-change: auto;
+    }
+
+    /* Structural Scannable Scroll Reveals */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Sticky Blended Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    @supports (backdrop-filter: blur(1px)) {
+      @media (min-width: 769px) {
+        nav {
+          background: rgba(var(--bg), 0.75);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+        }
+      }
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .nav-logo { height: 38px; width: 38px; border-radius: 10px; object-fit: cover; }
+    .nav-brand { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .theme-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .theme-toggle:hover { border-color: var(--border-hover); transform: rotate(15deg); }
+
+    .nav-btn {
+      background: var(--primary);
+      color: #030307;
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    [data-theme="light"] .nav-btn { color: #FFFFFF; }
+    .nav-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* Interactive Hero Component with Enhanced Background Video Visibility */
+    .hero {
+      padding: 5rem 1.25rem 4rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-video-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.35; /* Elevated brightness architecture */
+      filter: brightness(1.1) contrast(1.05);
+    }
+
+    .hero-content-layer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .update-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(var(--primary-rgb), 0.15);
+      border: 1px solid var(--border-hover);
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 999px;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-title {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.05em;
+      margin-bottom: 1.5rem;
+      max-width: 800px;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, var(--primary) 0%, #C4B5FD 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .hero-logo-wrapper {
+      position: relative;
+      margin-bottom: 3rem;
+      cursor: pointer;
+    }
+    .hero-logo-main {
+      width: 134px;
+      height: 134px;
+      border-radius: 34px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 2;
+      transition: var(--transition);
+    }
+    .hero-logo-wrapper:hover .hero-logo-main {
+      transform: scale(1.04) rotate(2deg);
+    }
+    .hero-logo-glow {
+      position: absolute;
+      inset: -5px;
+      background: var(--primary);
+      filter: blur(24px);
+      opacity: 0.35;
+      border-radius: 38px;
+      z-index: 1;
+    }
+
+    .hero-ctas {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 320px;
+      margin-bottom: 1.5rem;
+    }
+    .btn-large { min-height: 56px; width: 100%; font-size: 1.05rem; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: var(--transition); text-decoration: none;}
+    .btn-primary { background: var(--primary); color: #030307; border: none; box-shadow: 0 12px 30px rgba(var(--primary-rgb), 0.2); }
+    [data-theme="light"] .btn-primary { color: #FFFFFF; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .btn-ghost { background: rgba(var(--surface-rgb), 0.6); color: var(--text); border: 1px solid var(--border); backdrop-filter: blur(8px); }
+    .btn-ghost:hover { background: var(--surface2); border-color: var(--border-hover); }
+
+    .trust-line { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+
+    /* Interactive UI Live Mockup Engine */
+    .app-preview-container {
+      width: 100%;
+      max-width: 1000px;
+      padding: 0 1.25rem;
+      margin: 2rem auto 4rem;
+    }
+    .app-shell {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .preview-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .preview-tab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: var(--transition);
+    }
+    .preview-tab.active {
+      background: var(--surface2);
+      color: var(--primary);
+    }
+
+    .view-panel { display: none; }
+    .view-panel.active { display: block; animation: fadeIn 0.4s ease forwards; }
+
+    /* Tab Layout Specific Animations */
+    .planner-line { display: flex; align-items: center; gap: 12px; background: var(--surface2); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 8px; border-left: 4px solid var(--primary); }
+    .pcm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .pcm-card { background: var(--surface2); padding: 16px; border-radius: var(--radius-sm); text-align: left; }
+    .pcm-bar { height: 6px; background: var(--surface3); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+    .pcm-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+
+    /* Core Architectural Feature Grid */
+    .features-section { padding: 5rem 1.25rem; max-width: 1200px; margin: 0 auto; text-align: center; }
+    .section-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 3rem; }
+    .features-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; text-align: left; transition: var(--transition); }
+    .feature-card:hover { border-color: var(--border-hover); transform: translateY(-4px); }
+    .feature-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; font-size: 1.25rem; }
+    .feature-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+    .feature-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Micro-Milestones Grid Engine */
+    .matrix-section { padding: 4rem 1.25rem; background: var(--surface2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .matrix-container { max-width: 1000px; margin: 0 auto; }
+    .matrix-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .matrix-card { background: var(--surface); border: 1px solid var(--border); padding: 1.25rem; border-radius: var(--radius-sm); display: flex; gap: 14px; align-items: flex-start; }
+    .matrix-badge { background: rgba(52, 211, 153, 0.1); color: var(--success); font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: auto; }
+
+    /* Responsive Adapters */
+    @media (min-width: 480px) {
+      .hero-ctas { flex-direction: row; justify-content: center; max-width: 100%; }
+      .btn-large { width: auto; padding: 0 32px; }
+    }
+    @media (min-width: 768px) {
+      .hero-title { font-size: 4.2rem; }
+      .features-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+      .matrix-grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+      .app-shell { grid-template-columns: 240px 1fr; }
+      .preview-nav { flex-direction: column; border-bottom: none; border-right: 1px solid var(--border); padding-bottom: 0; padding-right: 1rem; }
+    }
+
+    /* Modal System Layout Sheets with Vertical Guide Scaling */
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(3, 3, 7, 0.85); display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    @media (min-width: 769px) { .modal-overlay { background: rgba(3, 3, 7, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-card { background: var(--surface); border-top: 1px solid var(--border); width: 100%; max-width: 460px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 2rem 1.5rem; transform: translateY(60px); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); max-height: 92vh; overflow-y: auto; }
+    .modal-overlay.open .modal-card { transform: translateY(0); }
+    
+    /* Dedicated Vertical Graphic Pipeline Container */
+    .vertical-guide-frame {
+      width: 100%;
+      max-height: 340px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .vertical-gif {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    @media (min-width: 520px) {
+      .modal-overlay { align-items: center; padding: 1.5rem; }
+      .modal-card { border-radius: var(--radius-xl); border: 1px solid var(--border); }
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Premium Portal Navigation Elements */
+    .nav-link-premium {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-link-premium:hover {
+      text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5);
+      transform: translateY(-1px);
+    }
+    .auth-widget {
+      display: flex;
+      align-items: center;
+    }
+    .user-profile {
+      position: relative;
+    }
+    .user-avatar-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+      cursor: pointer;
+      object-fit: cover;
+      transition: var(--transition);
+    }
+    .user-avatar-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.4);
+    }
+    .user-menu {
+      display: none;
+      position: absolute;
+      top: 48px;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      min-width: 240px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .user-menu.open {
+      display: block;
+    }
+    
+    /* Premium Section Styling */
+    .premium-section {
+      padding: 6rem 1.25rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+    }
+    .premium-header {
+      margin-bottom: 3.5rem;
+    }
+    .premium-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 1rem;
+    }
+    .premium-title span {
+      background: linear-gradient(135deg, var(--primary) 0%, #C4B5FD 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .premium-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Premium Features Cards */
+    .premium-features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+      text-align: left;
+    }
+    .premium-feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      transition: var(--transition);
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .premium-feature-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .premium-feature-icon {
+      font-size: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(var(--primary-rgb), 0.1);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .premium-feature-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--text);
+    }
+    .premium-feature-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    
+    /* Plan Toggle Switch */
+    .billing-toggle-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 6px;
+      border-radius: 999px;
+      margin-bottom: 3rem;
+    }
+    .billing-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: var(--transition);
+    }
+    .billing-toggle-btn.active {
+      background: var(--primary);
+      color: #030307;
+    }
+    [data-theme="light"] .billing-toggle-btn.active {
+      color: #FFFFFF;
+    }
+    .save-badge {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--success);
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+
+    /* Pricing Cards Layout */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      max-width: 1100px;
+      margin: 0 auto 4rem;
+    }
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: left;
+      position: relative;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+    .pricing-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+    }
+    .pricing-card.popular {
+      border-color: var(--primary);
+      box-shadow: 0 15px 40px rgba(var(--primary-rgb), 0.15);
+    }
+    .pricing-card.popular::before {
+      content: "MOST POPULAR";
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: #030307;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+    [data-theme="light"] .pricing-card.popular::before {
+      color: #FFFFFF;
+    }
+    .plan-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .plan-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+    .plan-price-container {
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .plan-price-original {
+      font-size: 1.2rem;
+      color: var(--text-faint);
+      text-decoration: line-through;
+    }
+    .plan-price-active {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .plan-price-period {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .plan-features-list {
+      list-style: none;
+      margin-bottom: 2.5rem;
+      flex-grow: 1;
+    }
+    .plan-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .plan-feature-item svg {
+      color: var(--success);
+      flex-shrink: 0;
+    }
+    
+    /* FAQ Section */
+    .faq-section {
+      padding: 4rem 1.25rem;
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .faq-item:hover {
+      border-color: var(--border-hover);
+    }
+    .faq-question {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-answer {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    /* Trust Badge grid */
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 3rem;
+      opacity: 0.7;
+    }
+    .trust-badge-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Status Screen overlays (Spinners, Check marks, Fails) */
+    .status-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(3, 3, 7, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    @media (min-width: 769px) { .status-overlay { background: rgba(3, 3, 7, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); } }
+    .status-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 3rem 2rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .status-overlay.active .status-card {
+      transform: scale(1);
+    }
+    .status-spinner {
+      width: 64px;
+      height: 64px;
+      border: 4px solid rgba(var(--primary-rgb), 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      margin: 0 auto 2rem;
+      animation: spin 1s linear infinite;
+    }
+    .status-icon-success {
+      width: 80px;
+      height: 80px;
+      background: rgba(52, 211, 153, 0.1);
+      color: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 2rem;
+      border: 2px solid var(--success);
+      box-shadow: 0 0 25px rgba(52, 211, 153, 0.2);
+    }
+    .status-icon-failure {
+      width: 80px;
+      height: 80px;
+      background: rgba(239, 68, 68, 0.1);
+      color: #EF4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 2rem;
+      border: 2px solid #EF4444;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+    }
+    .status-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+    }
+    .status-message {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Media queries for premium cards */
+    @media (min-width: 768px) {
+      .premium-features-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+      }
+      .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Mobile overrides for landing page */
+    @media (max-width: 768px) {
+      /* Disable expensive GPU effects on mobile */
+      .glow-canvas {
+        filter: blur(30px);
+        opacity: 0.5;
+      }
+      .hero-video-bg {
+        display: none;
+      }
+      .hero-logo-glow {
+        filter: blur(16px);
+        opacity: 0.25;
+      }
+      .reveal {
+        transition-duration: 0.4s;
+      }
+      /* Disable hover transforms on touch */
+      .feature-card:hover,
+      .premium-feature-card:hover,
+      .pricing-card:hover {
+        transform: none;
+      }
+      nav {
+        padding: 0 0.75rem;
+      }
+      .nav-brand {
+        font-size: 1.1rem;
+      }
+      .theme-toggle {
+        width: 36px;
+        height: 36px;
+      }
+      .nav-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+      }
+      .hero {
+        padding: 3rem 1rem 2rem;
+      }
+      .hero-title {
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+      .hero-sub {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+      }
+      .hero-logo-main {
+        width: 100px;
+        height: 100px;
+        border-radius: 26px;
+      }
+      .features-section {
+        padding: 3rem 1rem;
+      }
+      .section-title {
+        font-size: 1.6rem;
+        margin-bottom: 2rem;
+      }
+      .feature-card {
+        padding: 1.5rem;
+      }
+      .matrix-section {
+        padding: 3rem 1rem;
+      }
+      .matrix-card {
+        padding: 1rem;
+      }
+      .premium-section {
+        padding: 3rem 1rem;
+      }
+      .premium-title {
+        font-size: 1.8rem;
+      }
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .pricing-card {
+        padding: 1.5rem;
+      }
+      .modal-card {
+        padding: 1.5rem 1rem;
+      }
+      .pcm-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav-link-premium {
+        display: none !important;
+      }
+      .update-pill {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .btn-ghost {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+    }
+  </style>
+  <!-- Firebase App & Auth SDKs (Compat version for drop-in CDN usage) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- Canvas Confetti for Boom Animation -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <div class="glow-canvas" style="top: -5%; left: 10%;"></div>
+  <div class="glow-canvas" style="top: 45%; right: -5%;"></div>
+
+  <nav>
+    <div class="nav-left">
+      <img src="./logo.png" alt="DayStack Logo" class="nav-logo">
+      <span class="nav-brand">DayStack</span>
+    </div>
+    <div class="nav-actions">
+      <a href="#premium" class="nav-link-premium">★ Go Premium</a>
+      <button class="theme-toggle" aria-label="Layout layout mode toggle Switch" onclick="toggleTheme()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+
+      <!-- Authentication Widget -->
+      <div id="auth-widget" class="auth-widget">
+        <button class="nav-btn" id="btn-login" onclick="loginGoogle()" style="padding: 10px 18px; font-size: 0.85rem;">Sign In</button>
+        <div id="user-profile" class="user-profile" style="display: none; align-items: center; position: relative;">
+          <img id="user-avatar" src="" alt="Avatar" class="user-avatar-btn" onclick="toggleUserMenu(event)">
+          <div id="user-menu" class="user-menu">
+            <p id="user-name-text" style="font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></p>
+            <p id="user-email-text" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></p>
+            <div id="user-status-badge" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: rgba(var(--primary-rgb), 0.12); color: var(--primary); display: inline-block; margin-bottom: 12px; font-weight: 700;">Free Account</div>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 8px 0;">
+            <button onclick="logoutGoogle()" class="btn-ghost" style="width: 100%; border: none; background: none; color: #EF4444; font-size: 0.85rem; font-weight: 700; text-align: left; padding: 6px 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="nav-btn" onclick="openModal()">Download</button>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <video class="hero-video-bg" autoplay muted loop playsinline preload="auto">
+      <source src="./videomp_.mp4" type="video/mp4">
+    </video>
+    
+    <div class="hero-content-layer">
+      <div class="update-pill">🚀 Update v2.0 Live — Faster, Smarter, and Easier to Use</div>
+      <h1 class="hero-title">Turn discipline into<br>a <span>visual journey</span></h1>
+      <p class="hero-sub">The ultimate workspace designed to help you stay focused, plan your day with ease, and build lasting habits.</p>
+      
+      <div class="hero-logo-wrapper" onclick="openModal()">
+        <div class="hero-logo-glow"></div>
+        <img src="./logo.png" alt="DayStack Icon" class="hero-logo-main">
+      </div>
+
+      <div class="hero-ctas">
+        <button onclick="openModal()" class="btn-primary btn-large">
+          Download DayStack (APK)
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </button>
+        <a href="#features" class="btn-ghost btn-large">Explore New Features</a>
+      </div>
+      <p class="trust-line">100% Private Local Data · No Tracking or Ads · Works on Android 8.0+</p>
+    </div>
+  </header>
+
+  <section class="app-preview-container reveal">
+    <div class="app-shell">
+      <div class="preview-nav">
+        <button class="preview-tab active" onclick="switchTab(event, 'planner-view')">📅 Smart Planner</button>
+        <button class="preview-tab" onclick="switchTab(event, 'focus-view')">⏱️ Focus Deep State</button>
+        <button class="preview-tab" onclick="switchTab(event, 'student-view')">📚 Subject Study Tracks</button>
+        <button class="preview-tab" onclick="switchTab(event, 'analytics-view')">📈 Analytics Tracking</button>
+      </div>
+      
+      <div class="preview-content">
+        <div id="planner-view" class="view-panel active">
+          <div class="planner-line">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--primary);">06:00 AM</span>
+            <div style="flex:1;"><strong style="font-size:0.9rem; display:block;">Electrochemistry Core Concepts Review</strong><span style="font-size:0.75rem; color:var(--text-muted);">Time Block · High Priority</span></div>
+          </div>
+          <div class="planner-line" style="border-left-color: var(--success);">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--success);">09:30 AM</span>
+            <div style="flex:1;"><strong style="font-size:0.9rem; display:block;">Calculus & Definite Integration Practice</strong><span style="font-size:0.75rem; color:var(--text-muted);">PYQ Tracking Active Matrix</span></div>
+          </div>
+        </div>
+ 
+        <div id="focus-view" class="view-panel">
+          <div style="text-align:center; padding: 1.5rem 0;">
+            <div style="font-size:3rem; font-weight:800; letter-spacing:-0.02em; margin-bottom:0.5rem; color:var(--primary);">24:58</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Deep Focus Session Active · App Shield Isolation Locked</p>
+          </div>
+        </div>
+ 
+        <div id="student-view" class="view-panel">
+          <div class="pcm-grid">
+            <div class="pcm-card">
+              <strong style="font-size:0.9rem; display:block;">Physics</strong>
+              <span style="font-size:0.75rem; color:var(--text-muted);">14 Chapters Tracks</span>
+              <div class="pcm-bar"><div class="pcm-fill" style="width: 78%; background: #EF4444;"></div></div>
+            </div>
+            <div class="pcm-card">
+              <strong style="font-size:0.9rem; display:block;">Chemistry</strong>
+              <span style="font-size:0.75rem; color:var(--text-muted);">18 Chapters Tracks</span>
+              <div class="pcm-bar"><div class="pcm-fill" style="width: 62%; background: #F59E0B;"></div></div>
+            </div>
+            <div class="pcm-card">
+              <strong style="font-size:0.9rem; display:block;">Mathematics</strong>
+              <span style="font-size:0.75rem; color:var(--text-muted);">12 Chapters Tracks</span>
+              <div class="pcm-bar"><div class="pcm-fill" style="width: 85%; background: #3B82F6;"></div></div>
+            </div>
+          </div>
+        </div>
+ 
+        <div id="analytics-view" class="view-panel">
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Daily Study Time Breakdown</p>
+          <div style="display:flex; align-items:flex-end; gap:8px; height:100px; padding-top:10px;">
+            <div style="flex:1; background:var(--primary); height:60%; border-radius:4px 4px 0 0;"></div>
+            <div style="flex:1; background:var(--success); height:90%; border-radius:4px 4px 0 0;"></div>
+            <div style="flex:1; background:var(--primary); height:45%; border-radius:4px 4px 0 0;"></div>
+            <div style="flex:1; background:var(--text-faint); height:75%; border-radius:4px 4px 0 0;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="features-section">
+    <h2 class="section-title reveal">Features Built for You</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">📅</div>
+        <h3 class="feature-name">Daily Task Management</h3>
+        <p class="feature-desc">Manage your daily tasks with priority tags and emojis. Everything stays synced in real time and works completely offline.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🦊</div>
+        <h3 class="feature-name">Foxy AI Coach</h3>
+        <p class="feature-desc">Break down complex goals into easy steps. Chat with your friendly AI coach, listen to helpful voice advice, and view daily summaries of your achievements.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-name">Focus Shield App Blocker</h3>
+        <p class="feature-desc">Stay focused by locking away distracting apps. Keep track of how much time you save every day to build long-term discipline.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">⏱️</div>
+        <h3 class="feature-name">Focus Timer & Ambience</h3>
+        <p class="feature-desc">Start focused work sessions using a built-in timer. Play relaxing background sounds like rain, forests, or white noise to stay in the zone.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🏆</div>
+        <h3 class="feature-name">Gamification & XP</h3>
+        <p class="feature-desc">Earn experience points as you complete tasks and habits. Unlock beautiful profile designs to celebrate your daily progress.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🧠</div>
+        <h3 class="feature-name">Second Brain Archive</h3>
+        <p class="feature-desc">Save quick notes and diary reflections. Search your thoughts instantly and look back at your progress to plan your future growth.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📈</div>
+        <h3 class="feature-name">Habits & Roadmap Goals</h3>
+        <p class="feature-desc">Build long-term routines with an easy-to-use habit tracker. Let the AI helper generate step-by-step paths for your biggest goals.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💎</div>
+        <h3 class="feature-name">Monetization & Discounts</h3>
+        <p class="feature-desc">Unlock advanced tools with affordable plans. Automatically receive a 50% student discount when using a school email address.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Premium Portal Section -->
+  <section id="premium" class="premium-section reveal">
+    <div class="glow-canvas" style="top: 20%; left: -10%;"></div>
+    <div class="glow-canvas" style="bottom: 10%; right: -10%;"></div>
+
+    <div class="premium-header">
+      <div class="update-pill" style="margin-bottom: 1rem; background: rgba(var(--primary-rgb), 0.1); border-color: rgba(var(--primary-rgb), 0.3);">★ DAYSTACK PREMIUM</div>
+      <h2 class="premium-title">Supercharge Your <span>Focus and Growth</span></h2>
+      <p class="premium-subtitle">Keep your data synced across devices, back up your progress securely, and view helpful insights into your daily routine.</p>
+    </div>
+
+    <!-- Premium Feature Grid -->
+    <div class="premium-features-grid">
+      <div class="premium-feature-card">
+        <div class="premium-feature-icon">🔄</div>
+        <div>
+          <h3 class="premium-feature-title">Real-Time Cloud Sync</h3>
+          <p class="premium-feature-desc">Keep tasks, study plans, habits, and history synced instantly between your phone and computer.</p>
+        </div>
+      </div>
+      <div class="premium-feature-card">
+        <div class="premium-feature-icon">🛡️</div>
+        <div>
+          <h3 class="premium-feature-title">Focus Shield Blocker</h3>
+          <p class="premium-feature-desc">Mutes notifications and blocks distracting apps so you can stay fully focused on your goals.</p>
+        </div>
+      </div>
+      <div class="premium-feature-card">
+        <div class="premium-feature-icon">📈</div>
+        <div>
+          <h3 class="premium-feature-title">Detailed Focus Insights</h3>
+          <p class="premium-feature-desc">Visualize your study patterns and track how much time you dedicate to each of your subjects.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing Selector Toggle -->
+    <div class="billing-toggle-container">
+      <button class="billing-toggle-btn active" id="billing-monthly" onclick="setBillingCycle('monthly')">Monthly Billing</button>
+      <button class="billing-toggle-btn" id="billing-annual" onclick="setBillingCycle('annual')">
+        Annual Billing
+        <span class="save-badge">Save ~50%</span>
+      </button>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="pricing-grid">
+      <!-- Basic Plan -->
+      <div class="pricing-card" id="plan-card-basic">
+        <h3 class="plan-name">Basic Plan</h3>
+        <p class="plan-desc">For individuals seeking essential cloud sync and basic tracking tools.</p>
+        <div class="plan-price-container">
+          <span class="plan-price-original" id="basic-price-original">₹199</span>
+          <span class="plan-price-active" id="basic-price-active">₹99</span>
+          <span class="plan-price-period" id="basic-price-period">/month</span>
+        </div>
+        <ul class="plan-features-list">
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Sync across all devices
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlimited daily habits
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlimited long-term goals
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            More Foxy AI chat messages
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Advanced dashboard widgets
+          </li>
+        </ul>
+        <button class="btn-ghost btn-large btn-checkout" style="width:100%;" onclick="initializeCheckout('basic')" id="btn-checkout-basic">Get Basic Plan</button>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="pricing-card popular" id="plan-card-pro">
+        <h3 class="plan-name">Pro Workspace</h3>
+        <p class="plan-desc">Perfect for students who want deep focus capabilities and AI scheduling helper.</p>
+        <div class="plan-price-container">
+          <span class="plan-price-original" id="pro-price-original">₹399</span>
+          <span class="plan-price-active" id="pro-price-active">₹149</span>
+          <span class="plan-price-period" id="pro-price-period">/month</span>
+        </div>
+        <ul class="plan-features-list">
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Block goals distractions
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Study Guardian Strict Mode
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            AI day scheduling helper
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Google Calendar integration
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlimited Focus sessions
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Unlimited Foxy chat
+          </li>
+          <li class="plan-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Weekly AI progress reports
+          </li>
+        </ul>
+        <button class="btn-primary btn-large btn-checkout" style="width:100%;" onclick="initializeCheckout('pro')" id="btn-checkout-pro">Get Pro Workspace</button>
+      </div>
+
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="trust-badges" style="margin-bottom: 2rem;">
+      <div class="trust-badge-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure Razorpay Checkout
+      </div>
+      <div class="trust-badge-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        Firestore Sync Verification
+      </div>
+      <div class="trust-badge-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Instant Premium Activation
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section reveal">
+    <h2 class="section-title" style="text-align: center; margin-bottom: 2rem;">Subscription Frequently Asked Questions</h2>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        How does DayStack Premium sync to the mobile app?
+        <span>+</span>
+      </div>
+      <div class="faq-answer">
+        DayStack Premium syncs instantly via Firebase Firestore. As soon as payment is confirmed, your status is written to your user profile document. When you open the DayStack app and sign in with the same Google Account, the app fetches the premium flag and unlocks all premium assets immediately.
+      </div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        Can I cancel my subscription anytime?
+        <span>+</span>
+      </div>
+      <div class="faq-answer">
+        Yes! You can manage or cancel your subscription at any time directly through the client portal or by contacting support. Your premium features will remain active until the end of your current billing period.
+      </div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        Is my payment secure?
+        <span>+</span>
+      </div>
+      <div class="faq-answer">
+        Absolutely. All transactions are securely processed by Razorpay, a certified PCI-DSS Level 1 compliant payment provider. Your details are encrypted and never stored on our servers.
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment Status Overlay Screen -->
+  <div class="status-overlay" id="status-overlay">
+    <!-- Loading Card -->
+    <div class="status-card" id="status-card-loading" style="display: none;">
+      <div class="status-spinner"></div>
+      <h3 class="status-title">Processing Secure Payment</h3>
+      <p class="status-message">Please do not refresh the page or close this tab. We are verifying your transaction signature with Razorpay systems...</p>
+    </div>
+
+    <!-- Success Card -->
+    <div class="status-card" id="status-card-success" style="display: none;">
+      <div class="status-icon-success">✓</div>
+      <h3 class="status-title">Premium Activated!</h3>
+      <p class="status-message">Thank you for upgrading! Your premium access has been verified successfully. Your status is now synced with your Google account. Open the DayStack App to unlock all premium capabilities.</p>
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:2rem; font-size:0.85rem; text-align:left;">
+        <p style="margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">💳 <strong>Payment ID:</strong> <span id="success-payment-id" style="color:var(--primary); font-family:monospace;"></span></p>
+        <p style="margin-bottom:6px;">🌟 <strong>Plan:</strong> <span id="success-plan" style="font-weight:700;"></span></p>
+        <p style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">👤 <strong>Account:</strong> <span id="success-user-email"></span></p>
+      </div>
+      <button onclick="closeStatusOverlay()" class="btn-primary btn-large" style="width: 100%;">Return to Portal</button>
+    </div>
+
+    <!-- Failure Card -->
+    <div class="status-card" id="status-card-failure" style="display: none;">
+      <div class="status-icon-failure">✗</div>
+      <h3 class="status-title">Transaction Failed</h3>
+      <p class="status-message" id="failure-error-message">The payment signature verification failed or was cancelled by the user. Please check your credentials or try again later.</p>
+      <button onclick="closeStatusOverlay()" class="btn-ghost btn-large" style="width: 100%; border-color: #EF4444; color: #EF4444;">Dismiss Warning</button>
+    </div>
+  </div>
+
+  <section class="matrix-section reveal">
+    <div class="matrix-container">
+      <div class="matrix-grid">
+        <div class="matrix-card">
+          <div style="font-size:1.15rem;">🎖️</div>
+          <div>
+            <strong style="font-size:0.95rem; display:block; margin-bottom:2px;">Gamified Consistency Loops</strong>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Secure milestone badges and track structural multi-week streak tracking indexes.</p>
+          </div>
+          <span class="matrix-badge">v2.0 Active</span>
+        </div>
+        <div class="matrix-card">
+          <div style="font-size:1.15rem;">🔁</div>
+          <div>
+            <strong style="font-size:0.95rem; display:block; margin-bottom:2px;">Automated Habit Engine</strong>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Deploy recurring task metrics across weekly revision cycles and macro-level target parameters.</p>
+          </div>
+          <span class="matrix-badge">Optimized</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="padding: 4rem 1.25rem; border-top:1px solid var(--border); text-align:center; background:var(--bg);">
+    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:1rem;">
+      <img src="./logo.png" alt="DayStack Brand Vector Asset" style="height:32px; width:32px; border-radius:8px;">
+      <span style="font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">DayStack Workspace</span>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-faint);">© 2026 DayStack · High-Fidelity Execution Architectural Platforms for High-Tier Performers.</p>
+  </footer>
+
+  <div class="modal-overlay" id="download-modal" onclick="closeModalViaOverlay(event)">
+    <div class="modal-card">
+      <div style="text-align:center; margin-bottom:1.25rem;">
+        <span style="background:rgba(245,158,11,0.1); color:#F59E0B; font-size:0.75rem; font-weight:800; padding:6px 14px; border-radius:999px; text-transform:uppercase; letter-spacing:0.04em;">⚠️ External App Distribution Framework</span>
+      </div>
+      <h3 style="font-size:1.3rem; font-weight:800; text-align:center; margin-bottom:0.5rem; letter-spacing:-0.03em;">DayStack Payload Verification</h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); text-align:center; line-height:1.5; margin-bottom:1.25rem;">Because the Strict Focus Shield hooks directly into background processes to block notifications cleanly, system alerts may flag deployment:</p>
+      
+      <div class="vertical-guide-frame">
+        <img id="modal-tutorial-gif" src="" alt="Vertical Platform Interface Verification Flow Overview" class="vertical-gif">
+      </div>
+
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem; font-size:0.85rem; line-height:1.7; text-align:left;">
+        <p style="margin-bottom:6px;">✨ <strong>1.</strong> Press <strong>"More Details"</strong> on the security warning panel.</p>
+        <p>✨ <strong>2.</strong> Select the native <strong>"Install Anyway"</strong> loop to initialize structural parameters clean.</p>
+      </div>
+
+      <button onclick="executeDownloadWorkflow()" class="btn-primary btn-large" style="width:100%;">Download App</button>
+      <button onclick="closeModal()" class="btn-ghost btn-large" style="width:100%; margin-top:8px; border:none; background:none; font-size:0.85rem; color:var(--text-faint);">Dismiss Intent</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------------------------------------------------------
+    // 1. Firebase Initialization & Auth State
+    // ---------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPcT42gjlR0DTsOum1-kU24dcj60oCyZ8",
+      authDomain: "otfox-4b883.firebaseapp.com",
+      projectId: "otfox-4b883",
+      storageBucket: "otfox-4b883.firebasestorage.app",
+      messagingSenderId: "133312614176",
+      appId: "1:133312614176:web:665de90a99292d6361d145",
+      measurementId: "G-TCMYG9R9EW"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let currentSubscription = null;
+
+    // Use production Vercel server endpoint
+    const API_BASE = 'https://daystack-mu.vercel.app';
+
+    // Listen to Firebase Auth state
+    auth.onAuthStateChanged(async (user) => {
+      const btnLogin = document.getElementById('btn-login');
+      const userProfile = document.getElementById('user-profile');
+      const userAvatar = document.getElementById('user-avatar');
+      const userNameText = document.getElementById('user-name-text');
+      const userEmailText = document.getElementById('user-email-text');
+
+      if (user) {
+        currentUser = user;
+        btnLogin.style.display = 'none';
+        userProfile.style.display = 'flex';
+        userAvatar.src = user.photoURL || 'https://placehold.co/80x80';
+        userNameText.textContent = user.displayName || 'User';
+        userEmailText.textContent = user.email || '';
+
+        // Retrieve real-time subscription details from Firestore users/{uid}
+        listenToUserPremiumStatus(user.uid);
+      } else {
+        currentUser = null;
+        currentSubscription = null;
+        btnLogin.style.display = 'block';
+        userProfile.style.display = 'none';
+        
+        // Reset pricing UI states
+        updatePricingButtons(false);
+      }
+    });
+
+    // Listen to Firestore document to sync Premium status changes live
+    let unsubscribeUserDoc = null;
+    function listenToUserPremiumStatus(uid) {
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+
+      unsubscribeUserDoc = db.collection('users').doc(uid).onSnapshot((doc) => {
+        const badge = document.getElementById('user-status-badge');
+        if (doc.exists) {
+          const data = doc.data();
+          const isPremium = data.premium === true;
+          
+          if (isPremium) {
+            currentSubscription = data;
+            badge.textContent = `★ Premium: ${data.subscriptionPlan || 'Active'}`;
+            badge.style.background = 'rgba(52, 211, 153, 0.15)';
+            badge.style.color = 'var(--success)';
+            updatePricingButtons(true, data.subscriptionPlan);
+            return;
+          }
+        }
+        
+        // Free user state
+        currentSubscription = null;
+        badge.textContent = 'Free Account';
+        badge.style.background = 'rgba(var(--primary-rgb), 0.12)';
+        badge.style.color = 'var(--primary)';
+        updatePricingButtons(false);
+      }, (err) => {
+        console.error("Firestore user doc sync error:", err);
+      });
+    }
+
+    function updatePricingButtons(isPremium, activePlan) {
+      const btnBasic = document.getElementById('btn-checkout-basic');
+      const btnPro = document.getElementById('btn-checkout-pro');
+      
+      if (isPremium) {
+        btnBasic.disabled = true;
+        btnPro.disabled = true;
+        btnBasic.textContent = (activePlan || '').toLowerCase().includes('basic') ? 'Current Active Plan' : 'Premium Active';
+        btnPro.textContent = (activePlan || '').toLowerCase().includes('pro') ? 'Current Active Plan' : 'Premium Active';
+        btnBasic.style.opacity = '0.5';
+        btnPro.style.opacity = '0.5';
+      } else {
+        btnBasic.disabled = false;
+        btnPro.disabled = false;
+        btnBasic.style.opacity = '1';
+        btnPro.style.opacity = '1';
+        
+        // Restore standard text
+        const cycle = currentBillingCycle;
+        btnBasic.textContent = cycle === 'monthly' ? 'Get Basic Plan' : 'Get Basic Annual';
+        btnPro.textContent = cycle === 'monthly' ? 'Get Pro Workspace' : 'Get Pro Annual';
+      }
+    }
+
+    // Google Login Flow
+    async function loginGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        console.error("Google Auth error:", err);
+        alert("Authentication failed: " + err.message);
+      }
+    }
+
+    // Sign Out
+    async function logoutGoogle() {
+      if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null;
+      }
+      try {
+        await auth.signOut();
+        closeUserMenu();
+      } catch (err) {
+        console.error("Logout error:", err);
+      }
+    }
+
+    // Toggle Dropdown Menu
+    function toggleUserMenu(e) {
+      e.stopPropagation();
+      document.getElementById('user-menu').classList.toggle('open');
+    }
+
+    function closeUserMenu() {
+      document.getElementById('user-menu').classList.remove('open');
+    }
+
+    // Close user dropdown if clicking outside
+    window.addEventListener('click', () => {
+      closeUserMenu();
+    });
+
+    // ---------------------------------------------------------
+    // 2. Billing Cycle & Price Updates
+    // ---------------------------------------------------------
+    let currentBillingCycle = 'monthly';
+
+    function setBillingCycle(cycle) {
+      currentBillingCycle = cycle;
+      
+      const btnMonthly = document.getElementById('billing-monthly');
+      const btnAnnual = document.getElementById('billing-annual');
+      
+      const basicPrice = document.getElementById('basic-price-active');
+      const basicOriginal = document.getElementById('basic-price-original');
+      const basicPeriod = document.getElementById('basic-price-period');
+
+      const proPrice = document.getElementById('pro-price-active');
+      const proOriginal = document.getElementById('pro-price-original');
+      const proPeriod = document.getElementById('pro-price-period');
+
+      if (cycle === 'monthly') {
+        btnMonthly.classList.add('active');
+        btnAnnual.classList.remove('active');
+        
+        basicPrice.textContent = '₹99';
+        basicOriginal.textContent = '₹199';
+        basicPeriod.textContent = '/month';
+
+        proPrice.textContent = '₹149';
+        proOriginal.textContent = '₹399';
+        proPeriod.textContent = '/month';
+      } else {
+        btnMonthly.classList.remove('active');
+        btnAnnual.classList.add('active');
+        
+        basicPrice.textContent = '₹58';
+        basicOriginal.textContent = '₹99';
+        basicPeriod.textContent = '/month (billed ₹699/yr)';
+
+        proPrice.textContent = '₹125';
+        proOriginal.textContent = '₹149';
+        proPeriod.textContent = '/month (billed ₹1499/yr)';
+      }
+
+      if (!currentSubscription) {
+        updatePricingButtons(false);
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 3. Razorpay Checkout Flow
+    // ---------------------------------------------------------
+    async function initializeCheckout(planType) {
+      // 1. Force Google Login if not logged in
+      if (!currentUser) {
+        alert("Please sign in with Google to upgrade to Premium.");
+        await loginGoogle();
+        if (!auth.currentUser) return; // Login cancelled
+      }
+
+      // Map selection to price in paise
+      const cycle = currentBillingCycle;
+      let amount = 0; // in paise
+      if (planType === 'basic') {
+        amount = cycle === 'monthly' ? 9900 : 69900;
+      } else if (planType === 'pro') {
+        amount = cycle === 'monthly' ? 14900 : 149900;
+      }
+
+      let planId = `plan_${planType}_${cycle}`; // plan_pro_monthly, plan_pro_annual, etc.
+      let planNameFriendly = planType === 'basic'
+        ? `Basic Plan (${cycle === 'monthly' ? 'Monthly' : 'Annual'})`
+        : `Pro Plan (${cycle === 'monthly' ? 'Monthly' : 'Annual'})`;
+
+      // Student discount: Automatically applies a 50% discount upon entering a student-verified email (e.g. ending in .edu, .ac.in).
+      const userEmail = currentUser.email || "";
+      const isStudent = /(\.edu|\.ac\.in)$/i.test(userEmail);
+      if (isStudent) {
+        planId += "_student";
+        planNameFriendly += " (Student 50% Discount Applied)";
+        amount = Math.round(amount / 2);
+        alert("🎓 Student status verified! A 50% discount has been automatically applied to your order.");
+      }
+
+      showStatusOverlay('loading');
+
+      try {
+        const idToken = await currentUser.getIdToken();
+        // 2. Request backend to create Razorpay order
+        const res = await fetch(`${API_BASE}/api/create-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: currentUser.uid,
+            planId: planId,
+            email: currentUser.email,
+            idToken: idToken,
+            amount: amount,
+            currency: 'INR',
+            receipt: `rcpt_${currentUser.uid.substring(0, 8)}_${Date.now()}`
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          let errorMsg = 'Failed to create order on backend';
+          try {
+            const parsed = JSON.parse(errText);
+            if (parsed.details) {
+              if (parsed.details.includes("Authentication failed")) {
+                errorMsg = "Razorpay Authentication Failed: Please check if your Live API Key ID and Key Secret are correctly configured in your environment.";
+              } else {
+                errorMsg = `${parsed.error || 'Razorpay API error'}: ${parsed.details}`;
+              }
+            } else {
+              errorMsg = parsed.error || errText;
+            }
+          } catch (e) {
+            errorMsg = errText || errorMsg;
+          }
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        
+        if (!data.success || !data.order_id) {
+          throw new Error(data.error || 'Invalid order creation response');
+        }
+
+        const orderId = data.order_id;
+        const razorpayKey = data.key_id || "rzp_test_TEaZoQs4IIFazC";
+
+        // 3. Handle Local Mock/Simulated verification (Bypasses Razorpay checkouts if mock ID is returned)
+        if (orderId.startsWith('order_mock_')) {
+          const mockPaymentId = `pay_mock_${Math.random().toString(36).substring(2, 14)}`;
+          const mockSignature = `sig_mock_${Math.random().toString(36).substring(2, 14)}`;
+          await verifyPayment(mockPaymentId, orderId, mockSignature, planId, planNameFriendly);
+          return;
+        }
+
+        // 4. Open Razorpay secure checkout
+        const options = {
+          key: razorpayKey, // Key ID dynamically retrieved from backend env variables
+          amount: data.amount,
+          currency: data.currency,
+          name: "DayStack Workspace",
+          description: planNameFriendly,
+          image: "./logo.png",
+          order_id: orderId,
+          prefill: {
+            name: currentUser.displayName || "",
+            email: currentUser.email || ""
+          },
+          theme: {
+            color: "#A78BFA"
+          },
+          handler: function (response) {
+            verifyPayment(
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature,
+              planId,
+              planNameFriendly
+            );
+          },
+          modal: {
+            ondismiss: function() {
+              showStatusOverlay('failure', 'Payment cancelled by user.');
+            }
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error("Checkout initiation error:", err);
+        showStatusOverlay('failure', err.message || "Failed to initialize payment gateway.");
+      }
+    }
+
+    // 4. Verification call to backend
+    async function verifyPayment(paymentId, orderId, signature, planId, planNameFriendly) {
+      showStatusOverlay('loading');
+
+      try {
+        const idToken = await currentUser.getIdToken();
+        const res = await fetch(`${API_BASE}/api/verify-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: currentUser.uid,
+            razorpay_payment_id: paymentId,
+            razorpay_order_id: orderId,
+            razorpay_signature: signature,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL,
+            planId: planId,
+            idToken: idToken
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          let errorMsg = 'Signature verification rejected by security rules.';
+          try {
+            const parsed = JSON.parse(errText);
+            if (parsed.details) {
+              if (parsed.details.includes("Authentication failed")) {
+                errorMsg = "Razorpay Authentication Failed: Please check if your Live API Key ID and Key Secret are correctly configured in your environment.";
+              } else {
+                errorMsg = `${parsed.error || 'Razorpay API error'}: ${parsed.details}`;
+              }
+            } else {
+              errorMsg = parsed.error || errText;
+            }
+          } catch (e) {
+            errorMsg = errText || errorMsg;
+          }
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        
+        if (data.success) {
+          // Success Screen values
+          document.getElementById('success-payment-id').textContent = paymentId;
+          document.getElementById('success-plan').textContent = planNameFriendly;
+          document.getElementById('success-user-email').textContent = currentUser.email;
+          
+          showStatusOverlay('success');
+
+          // Trigger Boom Animation (Confetti)
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 150,
+              spread: 80,
+              origin: { y: 0.6 }
+            });
+            setTimeout(() => {
+              confetti({
+                particleCount: 50,
+                angle: 60,
+                spread: 60,
+                origin: { x: 0, y: 0.8 }
+              });
+              confetti({
+                particleCount: 50,
+                angle: 120,
+                spread: 60,
+                origin: { x: 1, y: 0.8 }
+              });
+            }, 250);
+          }
+        } else {
+          throw new Error(data.error || 'Payment signature is invalid');
+        }
+      } catch (err) {
+        console.error("Signature verification failure:", err);
+        showStatusOverlay('failure', err.message || "Security validation rejected this transaction.");
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 4. Status Screen & Modals Manager
+    // ---------------------------------------------------------
+    const statusOverlay = document.getElementById('status-overlay');
+    const cardLoading = document.getElementById('status-card-loading');
+    const cardSuccess = document.getElementById('status-card-success');
+    const cardFailure = document.getElementById('status-card-failure');
+
+    function showStatusOverlay(type, errorMsg = '') {
+      statusOverlay.classList.add('active');
+      cardLoading.style.display = type === 'loading' ? 'block' : 'none';
+      cardSuccess.style.display = type === 'success' ? 'block' : 'none';
+      cardFailure.style.display = type === 'failure' ? 'block' : 'none';
+      
+      if (type === 'failure' && errorMsg) {
+        document.getElementById('failure-error-message').textContent = errorMsg;
+      }
+    }
+
+    function closeStatusOverlay() {
+      statusOverlay.classList.remove('active');
+    }
+
+    // FAQ accordions helper
+    function toggleFaq(el) {
+      el.classList.toggle('open');
+      const toggle = el.querySelector('.faq-question span');
+      if (el.classList.contains('open')) {
+        toggle.textContent = '−';
+      } else {
+        toggle.textContent = '+';
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 5. Existing Theme, Tab & Observer Logic (Preserved)
+    // ---------------------------------------------------------
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    }
+
+    function switchTab(event, targetViewId) {
+      document.querySelectorAll('.preview-tab').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById(targetViewId).classList.add('active');
+    }
+
+    const modal = document.getElementById('download-modal');
+    const tutorialGif = document.getElementById('modal-tutorial-gif');
+
+    function openModal() { 
+      // Lazily set source right when requested to prevent early playback loops
+      tutorialGif.src = "./bu.gif"; 
+      modal.classList.add('open'); 
+      document.body.style.overflow = 'hidden'; 
+    }
+
+    function closeModal() { 
+      modal.classList.remove('open'); 
+      document.body.style.overflow = ''; 
+      // Strip source to completely freeze rendering background processing resources
+      tutorialGif.src = ""; 
+    }
+
+    function closeModalViaOverlay(e) { if(e.target === modal) closeModal(); }
+
+    function executeDownloadWorkflow() {
+      const anchor = document.createElement('a');
+      anchor.href = './Daystack.apk';
+      anchor.download = 'Daystack.apk';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      closeModal();
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.05 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
