@@ -1,7 +1,8 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/payment", "destination": "/checkout.html" },
-    { "source": "/payment-success", "destination": "/checkout.html" },
+    { "source": "/payment", "destination": "/payment.html" },
+    { "source": "/payment-success", "destination": "/payment-success.html" },
     { "source": "/payment/session", "destination": "/api/create-session" },
     { "source": "/payment/session/verify", "destination": "/api/verify-session" },
     { "source": "/payment/session/verify-payment", "destination": "/api/verify-payment-session" },
@@ -20,4 +21,3 @@
     { "source": "/checkout", "destination": "/checkout.html" }
   ]
 }
-
