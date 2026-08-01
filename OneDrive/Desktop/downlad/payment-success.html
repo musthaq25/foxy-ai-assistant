@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful | DayStack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0C;
+      --surface: #121216;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #C5A059;
+      --primary-hover: #E2BC72;
+      --text: #F4F4F6;
+      --text-muted: #9A9AA6;
+      --success: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .glow {
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .checkout-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      backdrop-filter: blur(16px);
+    }
+
+    .logo-container {
+      margin-bottom: 24px;
+    }
+
+    .logo-img {
+      width: 68px;
+      height: 68px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px;
+    }
+
+    .success-icon {
+      font-size: 54px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+      color: var(--success);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .btn-action {
+      display: inline-block;
+      width: 100%;
+      background: var(--primary);
+      color: #000;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-top: 16px;
+    }
+
+    .btn-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="checkout-card">
+    <div class="logo-container">
+      <img src="./logo.png" alt="DayStack Logo" class="logo-img" onerror="this.src='https://daystack-mu.vercel.app/logo.png'">
+    </div>
+    <div class="success-icon">✨ 🎉 ✨</div>
+    <h2>Payment Successful!</h2>
+    <p class="subtitle" id="status-text">Your DayStack Pro upgrade has been processed. Redirecting back to the app...</p>
+
+    <div id="action-buttons">
+      <a href="daystack://payment-success" class="btn-action" id="btn-redirect">Open DayStack App</a>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session');
+    const successLink = sessionId ? `daystack://payment-success?session=${encodeURIComponent(sessionId)}` : 'daystack://payment-success';
+    
+    document.getElementById('btn-redirect').href = successLink;
+
+    // Automatically trigger app deep link
+    window.location.href = successLink;
+
+    setTimeout(() => {
+      document.getElementById('status-text').textContent = "If the DayStack app did not open automatically, tap the button below to complete your upgrade.";
+    }, 2000);
+  </script>
+</body>
+</html>
