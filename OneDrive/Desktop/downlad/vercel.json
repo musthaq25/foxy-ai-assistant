@@ -1,22 +1,23 @@
 {
-  "rewrites": [
-    { "source": "/payment", "destination": "/payment.html" },
-    { "source": "/payment-success", "destination": "/payment-success.html" },
-    { "source": "/payment/session", "destination": "/api/create-session" },
-    { "source": "/payment/session/verify", "destination": "/api/verify-session" },
-    { "source": "/payment/session/verify-payment", "destination": "/api/verify-payment-session" },
-    { "source": "/razorpay/create-session", "destination": "/api/create-session" },
-    { "source": "/razorpay/verify-session", "destination": "/api/verify-session" },
-    { "source": "/razorpay/verify-payment-session", "destination": "/api/verify-payment-session" },
-    { "source": "/razorpay/trial", "destination": "/api/trial" },
-    { "source": "/razorpay/cancel", "destination": "/api/cancel" },
-    { "source": "/razorpay/subscription", "destination": "/api/create-subscription" },
-    { "source": "/razorpay/verify", "destination": "/api/verify-payment" },
-    { "source": "/razorpay/verify-order", "destination": "/api/verify-order" },
-    { "source": "/auth/send-otp", "destination": "/api/send-otp" },
-    { "source": "/auth/verify-otp", "destination": "/api/verify-otp" },
-    { "source": "/auth/check-device", "destination": "/api/device" },
-    { "source": "/auth/replace-device", "destination": "/api/device" },
-    { "source": "/checkout", "destination": "/checkout.html" }
+  "routes": [
+    { "src": "/payment/session/verify-payment", "dest": "/api/verify-payment-session.js" },
+    { "src": "/payment/session/verify", "dest": "/api/verify-session.js" },
+    { "src": "/payment/session", "dest": "/api/create-session.js" },
+    { "src": "/payment-success", "dest": "/payment-success.html" },
+    { "src": "/payment", "dest": "/payment.html" },
+    { "src": "/checkout", "dest": "/checkout.html" },
+    { "src": "/razorpay/create-session", "dest": "/api/create-session.js" },
+    { "src": "/razorpay/verify-session", "dest": "/api/verify-session.js" },
+    { "src": "/razorpay/verify-payment-session", "dest": "/api/verify-payment-session.js" },
+    { "src": "/razorpay/trial", "dest": "/api/trial.js" },
+    { "src": "/razorpay/cancel", "dest": "/api/cancel.js" },
+    { "src": "/razorpay/subscription", "dest": "/api/create-subscription.js" },
+    { "src": "/razorpay/verify", "dest": "/api/verify-payment.js" },
+    { "src": "/razorpay/verify-order", "dest": "/api/verify-order.js" },
+    { "src": "/auth/send-otp", "dest": "/api/send-otp.js" },
+    { "src": "/auth/verify-otp", "dest": "/api/verify-otp.js" },
+    { "src": "/auth/check-device", "dest": "/api/device.js" },
+    { "src": "/auth/replace-device", "dest": "/api/device.js" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
